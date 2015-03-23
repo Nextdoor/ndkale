@@ -1,0 +1,29 @@
+# max tasks per queue select: 10 (batch size) * 10 (iterations) = 100
+# task SLA: 60/10 = 6 seconds
+high_priority:
+  name: high_priority
+  priority: 100
+  batch_size: 10
+  visibility_timeout_sec: 60
+  long_poll_time_sec: 1
+  num_iterations: 10
+
+# max tasks per queue select: 10 (batch size) * 5 (iterations) = 50
+# task SLA: 60 / 10 = 6 seconds
+default:
+  name: default
+  priority: 40
+  batch_size: 10
+  visibility_timeout_sec: 60
+  long_poll_time_sec: 1
+  num_iterations: 5
+
+# max tasks per queue select: 10 (batch size) * 5 (iterations) = 50
+# task SLA: 60 / 10 = 6 seconds
+low_priority:
+  name: low_priority
+  priority: 5
+  batch_size: 10
+  visibility_timeout_sec: 60
+  long_poll_time_sec: 5
+  num_iterations: 5

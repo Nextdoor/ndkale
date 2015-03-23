@@ -1,0 +1,39 @@
+default:
+  name: default
+  priority: 75
+  batch_size: 10
+  visibility_timeout_sec: 600
+  long_poll_time_sec: 5
+  num_iterations: 5
+
+large:
+  name: large
+  priority: 30
+  batch_size: 1
+  visibility_timeout_sec: 600
+  long_poll_time_sec: 1
+  num_iterations: 2
+
+digest:
+  name: digest
+  priority: 65
+  batch_size: 10
+  visibility_timeout_sec: 120
+  long_poll_time_sec: 2
+  num_iterations: 2
+
+low_priority:
+  name: low_priority
+  priority: 5
+  batch_size: 10
+  visibility_timeout_sec: 120
+  long_poll_time_sec: 1
+  num_iterations: 1
+
+high_priority:
+  name: high_priority
+  priority: 100
+  batch_size: 10
+  visibility_timeout_sec: 600
+  long_poll_time_sec: 1
+  num_iterations: 10
