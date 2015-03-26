@@ -12,7 +12,7 @@ from setuptools import setup
 
 multiprocessing
 
-PACKAGE = 'nd-kale'
+PACKAGE = 'ndkale'
 __version__ = None
 execfile(os.path.join('kale', 'version.py'))  # set __version__
 
@@ -40,7 +40,7 @@ class CleanHook(clean):
                 shutil.rmtree(path)
 
         if self.all:
-            maybe_rm('nd_kale.egg-info')
+            maybe_rm('ndkale.egg-info')
             maybe_rm('build')
             maybe_rm('dist')
             subprocess.call('rm -rf *.egg', shell=True)

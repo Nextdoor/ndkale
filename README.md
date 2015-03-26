@@ -176,7 +176,14 @@ Here's an example
 
 ### Install kale
 
+From pypi
+
     pip install ndkale
+    
+From source code
+    
+    python setup.py install
+    
 
 ### Example implementation
 
