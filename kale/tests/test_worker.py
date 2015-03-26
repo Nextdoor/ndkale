@@ -5,8 +5,8 @@ import signal
 import unittest
 
 from kale import exceptions
+from kale import test_utils
 from kale import worker
-from kale.tests import test_utils
 
 
 class WorkerTestCase(unittest.TestCase):
@@ -378,7 +378,7 @@ class WorkerTestCase(unittest.TestCase):
         mock_consumer = self._create_patch('kale.consumer.Consumer')
         get_time = self._create_patch('time.time')
         mock_failure = self._create_patch(
-            'kale.tests.test_utils.TimeoutTask.handle_failure')
+            'kale.test_utils.TimeoutTask.handle_failure')
         mock_failure.return_value = True
         log_info = self._create_patch('kale.worker.logger.info')
 
@@ -415,7 +415,7 @@ class WorkerTestCase(unittest.TestCase):
         mock_consumer = self._create_patch('kale.consumer.Consumer')
         get_time = self._create_patch('time.time')
         mock_failure = self._create_patch(
-            'kale.tests.test_utils.FailTask.handle_failure')
+            'kale.test_utils.FailTask.handle_failure')
         mock_failure.return_value = True
         log_info = self._create_patch('kale.worker.logger.info')
 
@@ -451,7 +451,7 @@ class WorkerTestCase(unittest.TestCase):
         mock_consumer = self._create_patch('kale.consumer.Consumer')
         get_time = self._create_patch('time.time')
         mock_failure = self._create_patch(
-            'kale.tests.test_utils.FailTask.handle_failure')
+            'kale.test_utils.FailTask.handle_failure')
         mock_failure.return_value = False
         log_info = self._create_patch('kale.worker.logger.info')
 

@@ -8,7 +8,7 @@ from kale import message
 from kale import publisher
 from kale import settings
 from kale import sqs
-from kale.tests import test_utils
+from kale import test_utils
 
 
 class PublisherTestCase(unittest.TestCase):

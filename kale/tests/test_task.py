@@ -5,7 +5,7 @@ import unittest
 
 from kale import exceptions
 from kale import task
-from kale.tests import test_utils
+from kale import test_utils
 
 
 class TaskFailureTestCase(unittest.TestCase):
@@ -35,7 +35,7 @@ class TaskFailureTestCase(unittest.TestCase):
         pre_run.assert_called_once_with(*task_args)
         post_run.assert_called_once_with(*task_args)
         clean_env.assert_called_once_with(
-            task_id='mock_task', task_name='kale.tests.test_utils.MockTask')
+            task_id='mock_task', task_name='kale.test_utils.MockTask')
 
     def testRunWorkerFailTask(self):
         """Test running a task."""
@@ -57,7 +57,7 @@ class TaskFailureTestCase(unittest.TestCase):
         pre_run.assert_called_once_with(*task_args)
         assert not post_run.called, '_post_run should not have been called.'
         clean_env.assert_called_once_with(
-            task_id='fail_task', task_name='kale.tests.test_utils.FailTask',
+            task_id='fail_task', task_name='kale.test_utils.FailTask',
             exc=exc_ctxt_mngr.exception)
         self.assertTrue(task_inst._end_time > 0)
         self.assertTrue(task_inst._task_latency_sec > 0)
@@ -188,7 +188,7 @@ class TaskFailureTestCase(unittest.TestCase):
         pre_run.assert_called_once_with(*task_args)
         self.assertFalse(run_task.called)
         clean_env.assert_called_once_with(
-            task_id='mock_task', task_name='kale.tests.test_utils.MockTask',
+            task_id='mock_task', task_name='kale.test_utils.MockTask',
             exc=raised_exc)
 
     def testBlacklistedTaskNoRetries(self):
@@ -216,7 +216,7 @@ class TaskFailureTestCase(unittest.TestCase):
         pre_run.assert_called_once_with(*task_args)
         self.assertFalse(run_task.called)
         clean_env.assert_called_once_with(
-            task_id='mock_task', task_name='kale.tests.test_utils.MockTask',
+            task_id='mock_task', task_name='kale.test_utils.MockTask',
             exc=raised_exc)
 
         # Check that task
