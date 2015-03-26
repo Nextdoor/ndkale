@@ -1,6 +1,5 @@
 # Kale: Distributed task worker from Nextdoor
 
-[![Build Status](https://magnum.travis-ci.com/wenbinf/ndkale.svg?token=sBmTJMZyCyYcBraLSEnG&branch=master)](https://magnum.travis-ci.com/wenbinf/ndkale)
 
 Kale is a python task worker library that supports priority queues on Amazon SQS.
 
@@ -175,10 +174,6 @@ Here's an example
 ## How to implement a distributed task worker system using Kale
 
 ### Install kale
-
-From pypi
-
-    pip install ndkale
     
 From source code
     
