@@ -180,6 +180,12 @@ From source code
     
     python setup.py install
     
+Using pip
+
+    # Put this in requirements.txt
+    git+https://github.com/Nextdoor/ndkale.git@dd5c2d29a7497a034104df43479e835a80e2b27d
+    
+(We'll upload the package to PyPI soon.)
 
 ### Example implementation
 
