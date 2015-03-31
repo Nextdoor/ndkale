@@ -79,9 +79,6 @@ setup(
         'mock',
         'nose'
     ],
-    setup_requires=[
-        'flake8'
-    ],
     test_suite='nose.collector',
     install_requires=[
         'boto',
