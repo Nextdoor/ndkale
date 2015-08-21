@@ -70,7 +70,8 @@ class KaleMessage(message.RawMessage):
             '_publisher': _get_publisher_data(),
             # Current task retry. This will be 0 from new tasks and will be
             # incremented for each retry.
-            'retry_num': retry_count}
+            'retry_num': retry_count,
+        }
         return KaleMessage(queue=queue, body=message_data)
 
     @staticmethod
@@ -118,6 +119,7 @@ class KaleMessage(message.RawMessage):
         self.task_args = message_body['payload']['args']
         self.task_kwargs = message_body['payload']['kwargs']
         self.task_retry_num = message_body['retry_num']
+        self.app_data = message_body['payload']['app_data']
 
         # This will instantiate the task.
         self.task_inst = self._class_from_path(self.task_name)(message_body)
