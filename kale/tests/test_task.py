@@ -130,7 +130,8 @@ class TaskFailureTestCase(unittest.TestCase):
             range(task_inst.max_retries)]
         payload = {
             'args': [],
-            'kwargs': {}}
+            'kwargs': {},
+            'app_data': {}}
 
         for retry, delay_sec in sample_values:
             with mock.patch(

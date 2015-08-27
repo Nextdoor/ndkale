@@ -154,7 +154,7 @@ class Task(object):
         payload = {
             'args': message.task_args,
             'kwargs': message.task_kwargs,
-            'app_data': message.app_data}
+            'app_data': message.task_app_data}
         retry_count = message.task_retry_num + 1
         delay_sec = cls._get_delay_sec_for_retry(message.task_retry_num)
         pub = publisher.Publisher()

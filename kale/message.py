@@ -119,7 +119,7 @@ class KaleMessage(message.RawMessage):
         self.task_args = message_body['payload']['args']
         self.task_kwargs = message_body['payload']['kwargs']
         self.task_retry_num = message_body['retry_num']
-        self.app_data = message_body['payload']['app_data']
+        self.task_app_data = message_body['payload'].get('app_data')
 
         # This will instantiate the task.
         self.task_inst = self._class_from_path(self.task_name)(message_body)

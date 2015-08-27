@@ -35,6 +35,27 @@ class PublisherTestCase(unittest.TestCase):
                 mock_message.create_message.return_value = mock.MagicMock()
                 mock_publisher.publish(mock_task_class, 1, payload)
 
+    def test_publish_with_app_data(self):
+        """Test publisher logic."""
+
+        sqs_inst = sqs.SQSTalk()
+        sqs_inst._connection = mock.MagicMock()
+
+        with mock.patch(
+                'kale.queue_info.QueueInfo.get_queue') as mock_get_queue:
+            mock_queue = mock.MagicMock()
+            mock_queue.visibility_timeout_sec = 10
+            mock_get_queue.return_value = mock_queue
+            mock_publisher = publisher.Publisher(sqs_inst)
+            mock_publisher._get_or_create_queue = mock.MagicMock()
+            payload = {'args': [], 'kwargs': {}, 'app_data': {}}
+            mock_task_class = mock.MagicMock()
+            mock_task_class.time_limit = 2
+            mock_task_class.__name__ = 'task'
+            with mock.patch('kale.message.KaleMessage') as mock_message:
+                mock_message.create_message.return_value = mock.MagicMock()
+                mock_publisher.publish(mock_task_class, 1, payload)
+
     def test_publish_messages_to_dead_letter_queue(self):
         """Test publisher to DLQ logic."""
 
