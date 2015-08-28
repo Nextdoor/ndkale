@@ -49,21 +49,25 @@ class Task(object):
     # this value.
     queue = None
 
-    def __init__(self, message_payload=None, *args, **kwargs):
+    def __init__(self, message_body=None, *args, **kwargs):
         """Initialize an instance of a task.
 
         :param message_payload: Payload this task is being created from
                 (optionally None for testability).
         """
         # global mocking
-        message_payload = message_payload or {}
-        self.task_id = message_payload.get('id')
+        message_body = message_body or {}
+        self.task_id = message_body.get('id')
         self.task_name = '%s.%s' % (self.__class__.__module__,
                                     self.__class__.__name__)
+        self.app_data = None
+        payload = message_body.get('payload')
+        if payload:
+            self.app_data = payload.get('app_data', None)
 
         # Used for tracking/diagnostics.
-        self._publisher_data = message_payload.get('_publisher')
-        self._enqueued_time = message_payload.get('_enqueued_time', 0)
+        self._publisher_data = message_body.get('_publisher')
+        self._enqueued_time = message_body.get('_enqueued_time', 0)
         self._dequeued_time = None
         self._start_time = None
         self._end_time = None
@@ -84,13 +88,13 @@ class Task(object):
         return '%s_uuid_%s' % (cls.__name__, uuid.uuid1())
 
     @classmethod
-    def publish(cls, *args, **kwargs):
+    def publish(cls, app_data, *args, **kwargs):
         """Class method to publish a task given instance specific arguments."""
-
         task_id = cls._get_task_id(*args, **kwargs)
         payload = {
             'args': args,
-            'kwargs': kwargs}
+            'kwargs': kwargs,
+            'app_data': app_data}
         pub = publisher.Publisher()
         pub.publish(cls, task_id, payload)
         return task_id
@@ -149,7 +153,8 @@ class Task(object):
 
         payload = {
             'args': message.task_args,
-            'kwargs': message.task_kwargs}
+            'kwargs': message.task_kwargs,
+            'app_data': message.task_app_data}
         retry_count = message.task_retry_num + 1
         delay_sec = cls._get_delay_sec_for_retry(message.task_retry_num)
         pub = publisher.Publisher()
