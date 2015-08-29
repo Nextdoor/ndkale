@@ -7,7 +7,6 @@ import shutil
 import subprocess
 
 from distutils.command.clean import clean
-from distutils.command.sdist import sdist
 from setuptools import setup
 
 multiprocessing
@@ -18,17 +17,6 @@ execfile(os.path.join('kale', 'version.py'))  # set __version__
 
 
 # -*- Hooks -*-
-
-class SourceDistHook(sdist):
-
-    def run(self):
-        with open('version.rst', 'w') as f:
-            f.write(':Version: %s\n' % __version__)
-        shutil.copy('README.md', 'README.md')
-        sdist.run(self)
-        os.unlink('README.md')
-        os.unlink('version.rst')
-
 
 class CleanHook(clean):
 
@@ -88,5 +76,5 @@ setup(
         'setuptools',
     ],
     classifiers=classifiers,
-    cmdclass={'sdist': SourceDistHook, 'clean': CleanHook},
+    cmdclass={'clean': CleanHook},
 )
