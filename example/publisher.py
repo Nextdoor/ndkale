@@ -13,5 +13,5 @@ FLAGS = gflags.FLAGS
 
 if __name__ == '__main__':
     FLAGS(sys.argv)
-    tasks.FibonacciTask.publish(FLAGS.n)
+    tasks.FibonacciTask.publish(None, FLAGS.n)
     print 'A FibonacciTask is scheduled to run. With input %d.' % FLAGS.n
