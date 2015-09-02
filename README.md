@@ -26,9 +26,13 @@ A publisher can be any python program that imports a Kale-based task class and i
 Then the publisher publishes a task to Amazon SQS, which normally takes 10s miliseconds to return:
 
     import tasks
-    tasks.MyTask.publish(arg1, arg2)
+    tasks.MyTask.publish(None, arg1, arg2)
    
-The publish() function is a static method of a task class and it has the same signiture as the run\_task() method. A worker process, which may run on a different machine, will pick up the message and execute run\_task() method of the task.
+The publish() function is a static method of a task class.  Other than the first parameter, which can usually be `None`, it has the same signiture as the `run_task()` method. A worker process, which may run on a different machine, will pick up the message and execute `run_task()` method of the task.
+
+While ndkale is usable out of the box, the first parameter in `publish(app_data, *args, *kwargs)` is designed for more complex situations where certain state may need to be passed outside the context of the actual task parameters.  One example of this might be to pass the environment.  The `app_data` must be pickleable so that in can be encoded and inserted into the SQS message.
+
+The default task object will be populated with an `app_data` attribute, but the default worker will not use it.  You will need to extend the default Worker or Task class to take advantage of `app_data`.
 
 ### Worker
 
