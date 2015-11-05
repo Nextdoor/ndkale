@@ -88,15 +88,21 @@ class Task(object):
         return '%s_uuid_%s' % (cls.__name__, uuid.uuid1())
 
     @classmethod
-    def publish(cls, app_data, *args, **kwargs):
-        """Class method to publish a task given instance specific arguments."""
+    def publish(cls, app_data, delay_sec=None, *args, **kwargs):
+        """Class method to publish a task given instance specific arguments.
+
+        Args:
+            app_data: Application data to pass along with the task (ex Locale).
+            delay_sec: Seconds to hide task in SQS before releasing
+                to clients (default None).
+        """
         task_id = cls._get_task_id(*args, **kwargs)
         payload = {
             'args': args,
             'kwargs': kwargs,
             'app_data': app_data}
         pub = publisher.Publisher()
-        pub.publish(cls, task_id, payload)
+        pub.publish(cls, task_id, payload, delay_sec=delay_sec)
         return task_id
 
     @classmethod
