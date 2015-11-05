@@ -8,6 +8,6 @@ install:
   - pip freeze
 
 before_script:
-  - pip install flake8 && flake8 kale example
+  - pip install flake8 && flake8 kale example --max-line-length 100
 
 script: python setup.py test
