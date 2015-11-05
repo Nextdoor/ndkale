@@ -4,7 +4,7 @@
 
 Kale is a python task worker library that supports priority queues on Amazon SQS.
 
-We have a blog post on Kale: [http://tmblr.co/ZZM89v1O9x1RI](http://tmblr.co/ZZM89v1O9x1RI)
+We have a blog post on Kale: [Nextdoor Taskworker: Simple, Efficient & Scalable](https://engblog.nextdoor.com/2014/08/13/nextdoor-taskworker-simple-efficient-scalable/)
 
 ## How does it work?
 
