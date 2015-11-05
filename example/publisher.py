@@ -1,5 +1,4 @@
 import gflags
-import os
 import sys
 
 from taskworker import tasks
