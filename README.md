@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Nextdoor/ndkale.svg?branch=master)](https://travis-ci.org/Nextdoor/ndkale)
 
-Kale is a python task worker library that supports priority queues on Amazon SQS. 
+Kale is a python task worker library that supports priority queues on [Amazon SQS](https://aws.amazon.com/sqs/). 
 
 Check out our blog post - [Nextdoor Taskworker: Simple, Efficient & Scalable](https://engblog.nextdoor.com/2014/08/13/nextdoor-taskworker-simple-efficient-scalable/)
 
