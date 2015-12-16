@@ -1,12 +1,14 @@
 """Benchmarks queue_info implementations."""
+from __future__ import absolute_import
 
-import gflags
+import argparse
 import logging
-import Queue
 import os
-import sys
 import threading
 import time
+
+import six.moves.queue
+from six.moves import range
 
 # Set this environment variable before importing kale module
 os.environ['KALE_SETTINGS_MODULE'] = 'benchmark_settings'
@@ -14,17 +16,11 @@ os.environ['KALE_SETTINGS_MODULE'] = 'benchmark_settings'
 from kale import queue_info
 from kale import sqs
 
-gflags.DEFINE_string('config_file', 'sample_queue_config.yaml',
-                     'The tasks load file path.')
-gflags.DEFINE_integer('workers', 5 * 8, 'Number of task workers.')
-gflags.DEFINE_integer('iterations', 5,
-                      'Number of iterations for a worker to check sqs queues.')
-FLAGS = gflags.FLAGS
 
 logging.basicConfig(level='INFO')
 log = logging.getLogger('kale.benchmark')
 
-checking_sqs_time = Queue.Queue()
+checking_sqs_time = six.moves.queue.Queue()
 
 
 class WorkerThread(threading.Thread):
@@ -91,12 +87,17 @@ class Benchmark(object):
 
 def main():
     """Main function for this script."""
-    try:
-        FLAGS(sys.argv)
-    except gflags.FlagsError as e:
-        log.error('%s\\nUsage: %s ARGS\\n%s' % (e, sys.argv[0], FLAGS))
-        sys.exit(1)
-    benchmark = Benchmark(FLAGS.config_file, FLAGS.workers, FLAGS.iterations)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('config_file', type=str, default='sample_queue_config.yaml',
+                        help='The tasks load file path.')
+    parser.add_argument('workers', type=int, default=5 * 8,
+                        help='Number of task workers.')
+    parser.add_argument('iterations', type=int, default=5,
+                        help='Number of iterations for a worker to check sqs queues.')
+
+    args = parser.parse_args()
+
+    benchmark = Benchmark(args.config_file, args.workers, args.iterations)
     benchmark.run()
 
 if __name__ == '__main__':

@@ -1,8 +1,10 @@
 """Custom message type for SQS messages."""
+from __future__ import absolute_import
 
 import pickle
 
 from boto.sqs import message
+import six
 
 from kale import crypt
 from kale import exceptions
@@ -35,7 +37,7 @@ class KaleMessage(message.RawMessage):
         # Lazily instantiate the task mapper.
         if not self._task_mapper:
             self._task_mapper = {k: utils.class_import_from_path(v)
-                                 for k, v in settings.TASK_MAPPER.iteritems()}
+                                 for k, v in six.iteritems(settings.TASK_MAPPER)}
 
     @classmethod
     def create_message(cls, task_class=None, task_id=None, payload=None,

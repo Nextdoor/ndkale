@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+
 import multiprocessing  # To make python setup.py test happy
 import os
 import shutil
@@ -13,7 +15,10 @@ multiprocessing
 
 PACKAGE = 'ndkale'
 __version__ = None
-execfile(os.path.join('kale', 'version.py'))  # set __version__
+with open(os.path.join('kale', 'version.py')) as f:
+    source = f.read()
+code = compile(source, os.path.join('kale', 'version.py'), 'exec')
+exec(code)  # set __version__
 
 
 # -*- Hooks -*-
@@ -70,10 +75,11 @@ setup(
     test_suite='nose.collector',
     install_requires=[
         'boto',
-        'python-gflags',
         'pycrypto',
         'pyyaml',
         'setuptools',
+        'six',
+        'future',
     ],
     classifiers=classifiers,
     cmdclass={'clean': CleanHook},

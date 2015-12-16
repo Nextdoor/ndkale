@@ -46,28 +46,35 @@ python benchmark_queue_selector.py --tasks_load_file ~/sample_logs \
      --publish_interval 0.01 \
      --queue_selector_class Random
 """
+from __future__ import absolute_import
 
+import argparse
 import csv
-import gflags
 import logging
 import os
-import Queue
-import sys
 import threading
 import time
+
+from six.moves import range
+import six
+import six.moves.queue
 
 from kale import queue_info
 from kale import queue_selector
 
-gflags.DEFINE_string('queue_selector_class', 'Random',
-                     'The class for implementing queue_selector.')
-gflags.DEFINE_string('tasks_load_file', '', 'The tasks load file path.')
-gflags.DEFINE_integer('workers', 5 * 8, 'Number of task workers.')
-gflags.DEFINE_integer('speedup', 1,
-                      'Speedup task processing by [speedup] times.')
-gflags.DEFINE_float('publish_interval', 0.01,
-                    'Interval (seconds) between two task publishings.')
-FLAGS = gflags.FLAGS
+
+parser = argparse.ArgumentParser()
+parser.add_argument('queue_selector_class', type=str, default='Random',
+                    help='The class for implementing queue_selector.')
+parser.add_argument('tasks_load_file', type=str, default='',
+                    help='The tasks load file path.')
+parser.add_argument('workers', type=int, default=5 * 8,
+                    help='Number of task workers.')
+parser.add_argument('speedup', type=int, default=1,
+                    help='Speedup task processing by [speedup] times.')
+parser.add_argument('publish_interval', type=float, default=0.01,
+                    help='Interval (seconds) between two task publishings.')
+
 
 logging.basicConfig(level='INFO')
 log = logging.getLogger('kale.benchmark')
@@ -96,10 +103,10 @@ class StaticTaskQueue(queue_info.TaskQueue):
         self.default_priority = default_priority
 
         # What tasks are left in this queue for processing
-        self.tasks = Queue.Queue(maxsize=0)
+        self.tasks = six.moves.queue.Queue(maxsize=0)
 
         # What tasks are finished
-        self.finished_tasks = Queue.Queue(maxsize=0)
+        self.finished_tasks = six.moves.queue.Queue(maxsize=0)
 
         # How many times we need to wait for long polling.
         # That is, how often we hit an empty queue.
@@ -124,11 +131,11 @@ class StaticQueueInfo(queue_info.QueueInfoBase):
 
     def get_queues(self):
         """Returns all queues."""
-        return self.queues.values()
+        return list(self.queues.values())
 
     def is_empty(self):
         """Are all queues empty?"""
-        for (queue_name, queue) in self.queues.iteritems():
+        for (queue_name, queue) in six.iteritems(self.queues):
             if not self.is_queue_empty(queue):
                 return False
         return True
@@ -136,7 +143,7 @@ class StaticQueueInfo(queue_info.QueueInfoBase):
     def get_highest_priority_non_empty_queue(self):
         """Returns a list of non-empty queues."""
         non_empty_queues = []
-        for (queue_name, queue) in self.queues.iteritems():
+        for (queue_name, queue) in six.iteritems(self.queues):
             if not self.is_queue_empty(queue):
                 non_empty_queues.append(self.queues[queue_name])
         if len(non_empty_queues) == 0:
@@ -184,7 +191,7 @@ class WorkerThread(threading.Thread):
                 time.sleep(float(task_running_time) / self.speedup)
                 self.queue_info.queues[queue.name].finished_tasks.put(
                     task_entry)
-            except Queue.Empty:
+            except six.moves.queue.Empty:
                 # We want to keep track of long polling occurrences, which is
                 # a waste of compute resource.
                 self.queue_info.queues[queue.name].long_polling_count += 1
@@ -242,7 +249,7 @@ class PrintStatsThread(threading.Thread):
     def _print_queue_stats(self):
         """Print out queue stats."""
         string = ''
-        for queue_name in self.queue_info.queues.iterkeys():
+        for queue_name in six.iterkeys(self.queue_info.queues):
             string += '%s=%d; ' % (
                 queue_name, self.queue_info.queues[queue_name].tasks.qsize())
         log.info(string)
@@ -257,7 +264,7 @@ class PrintStatsThread(threading.Thread):
         log.info('=== Benchmark Results ===')
         total_processed_tasks = 0
         finished_count_breakdown = {}
-        for queue_name in self.queue_info.queues.iterkeys():
+        for queue_name in six.iterkeys(self.queue_info.queues):
             finished_tasks = self.queue_info.queues[queue_name].finished_tasks
             all_queue_latencies = []
             while not finished_tasks.empty():
@@ -286,7 +293,7 @@ class PrintStatsThread(threading.Thread):
 
         log.info('Total processed tasks: %d / %d' % (
             total_processed_tasks, self.total_num_tasks))
-        for queue_name in finished_count_breakdown.iterkeys():
+        for queue_name in six.iterkeys(finished_count_breakdown):
             try:
                 log.info('Queue %s: %d tasks finished.' % (
                     queue_name, finished_count_breakdown[queue_name]))
@@ -366,14 +373,10 @@ class Benchmark(object):
 
 def main():
     """Main function for this script."""
-    try:
-        FLAGS(sys.argv)
-    except gflags.FlagsError as e:
-        log.error('%s\\nUsage: %s ARGS\\n%s' % (e, sys.argv[0], FLAGS))
-        sys.exit(1)
+    args = parser.parse_args()
 
-    benchmark = Benchmark(FLAGS.workers, FLAGS.speedup, FLAGS.tasks_load_file,
-                          FLAGS.queue_selector_class, FLAGS.publish_interval)
+    benchmark = Benchmark(args.workers, args.speedup, args.tasks_load_file,
+                          args.queue_selector_class, args.publish_interval)
     benchmark.run()
 
 

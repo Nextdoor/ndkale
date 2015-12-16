@@ -2,6 +2,7 @@ language: python
 
 python:
   - "2.7"
+  - "3.5"
 
 install:
   - python setup.py install
@@ -10,4 +11,5 @@ install:
 before_script:
   - pip install flake8 && flake8 kale example --max-line-length 100
 
-script: python setup.py test
+script:
+  - python setup.py test

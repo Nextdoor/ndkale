@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import print_function
+
 import logging
 
 from kale import task
@@ -29,4 +32,4 @@ class FibonacciTask(task.Task):
             return FibonacciTask.fibonacci(n-1) + FibonacciTask.fibonacci(n-2)
 
     def run_task(self, n, *args, **kwargs):
-        print 'fibonacci(%d) = %d' % (n, self.fibonacci(n))
+        print('fibonacci(%d) = %d' % (n, self.fibonacci(n)))

@@ -16,14 +16,18 @@ Usage ::
     decrypted_message = crypt.decrypt(encrypted_message)
 
 """
+from __future__ import absolute_import
 
-from Crypto.Cipher import AES
 import base64
+import builtins
+import codecs
 import logging
 import struct
 
-from kale import settings
+from Crypto.Cipher import AES
+import six
 
+from kale import settings
 
 log = logging.getLogger(__name__)
 
@@ -43,18 +47,21 @@ class CryptException(Exception):
 def encrypt(msg):
     """Encrypts a message.
 
-    :param msg: string message to be encrypted.
-    :return: string for an encrypted version of msg.
+    :param msg: byte string message to be encrypted.
+    :return: bytes for an encrypted version of msg.
+    :raises: ValueError if passed anything other than bytes.
+        CryptException if the encryption fails.
     """
     if not cipher:
         return msg
-    if not isinstance(msg, (str, unicode)):
-        msg = str(msg)
+    if not isinstance(msg, six.binary_type):
+        raise ValueError('only bytes can be encrypted')
+    if six.PY2:
+        msg = builtins.bytes(msg)
 
-    try:
-        msg = base64.b64encode(cipher.encrypt(_pad(msg)))
-    except Exception as e:
-        raise CryptException(e)
+    msg = _pad(msg)
+    msg = cipher.encrypt(msg)
+    msg = base64.b64encode(msg)
 
     return msg
 
@@ -62,16 +69,29 @@ def encrypt(msg):
 def decrypt(msg):
     """Decrypts a message.
 
-    :param str msg: string of message to be decrypted.
-    :return: string for original message.
-    :rtype: str
+    :param bytes msg: string of message to be decrypted.
+    :return: bytes for original message.
+    :rtype: bytes
     """
     if not cipher:
         return msg
 
+    if isinstance(msg, six.text_type):
+        # This should be a base64 string, so it
+        # should encode to ascii without any problems.
+        msg = msg.encode('ascii')
+
+    if not isinstance(msg, six.binary_type):
+        raise ValueError('Only bytes(or unicodes) can be decrypted')
+
+    if six.PY2:
+        msg = builtins.bytes(msg)
+
     try:
         msg = _unpad(cipher.decrypt(base64.b64decode(msg)))
-    except Exception as e:
+    except (ValueError, TypeError) as e:
+        # We can get struct.error if we end up passing an empty string
+        # to _unpad. We get
         raise CryptException(e)
 
     return msg
@@ -80,19 +100,16 @@ def decrypt(msg):
 def urlsafe_encrypt(msg):
     """Urlsafe encrypts a message.
 
-    :param str msg: string message to be encrypted.
+    :param bytes msg: string message to be encrypted.
     :return: string of encrypted version of msg.
-    :rtype: str
+    :rtype: bytes
     """
     if not cipher:
         return msg
-    if not isinstance(msg, (str, unicode)):
-        msg = str(msg)
+    if not isinstance(msg, six.binary_type):
+        raise ValueError('only bytes can be encrypted')
 
-    try:
-        msg = base64.urlsafe_b64encode(cipher.encrypt(_pad(msg)))
-    except Exception as e:
-        raise CryptException(e)
+    msg = base64.urlsafe_b64encode(cipher.encrypt(_pad(msg)))
 
     return msg
 
@@ -100,19 +117,17 @@ def urlsafe_encrypt(msg):
 def hex_encrypt(msg):
     """Hex encrypts a message.
 
-    :param str msg: string message to be encrypted.
+    :param bytes msg: string message to be encrypted.
     :return: string for encrypted version of msg in hex.
-    :rtype: str
+    :rtype: bytes
     """
     if not cipher:
         return msg
-    if not isinstance(msg, (str, unicode)):
-        msg = str(msg)
+    if not isinstance(msg, six.binary_type):
+        raise ValueError('only bytes can be encrypted')
 
-    try:
-        msg = cipher.encrypt(_pad(msg)).encode('hex')
-    except Exception as e:
-        raise CryptException(e)
+    msg = cipher.encrypt(_pad(msg))
+    msg = codecs.encode(msg, 'hex')
 
     return msg
 
@@ -120,16 +135,24 @@ def hex_encrypt(msg):
 def hex_decrypt(msg):
     """Decrypts a message.
 
-    :param str msg: string for the message to be decrypted.
+    :param bytes msg: string for the message to be decrypted.
     :return: string for the original message.
-    :rtype: str
+    :rtype: bytes
     """
     if not cipher:
         return msg
 
+    if isinstance(msg, six.text_type):
+        # This should be a hex encoded string, so it
+        # should encode to ascii without any problems.
+        msg = msg.encode('ascii')
+
+    if not isinstance(msg, six.binary_type):
+        raise ValueError('Only bytes or unicodes can be decrypted')
+
     try:
-        msg = _unpad(cipher.decrypt(msg.decode('hex')))
-    except Exception as e:
+        msg = _unpad(cipher.decrypt(codecs.decode(msg, 'hex')))
+    except (ValueError, TypeError) as e:
         raise CryptException(e)
 
     return msg
@@ -138,17 +161,25 @@ def hex_decrypt(msg):
 def urlsafe_decrypt(msg):
     """Urlsafe decrypts a message.
 
-    :param str msg: string for the message to be decrypted.
+    :param bytes msg: string for the message to be decrypted.
     :return: string for the original message.
-    :rtype: str
+    :rtype: bytes
     """
 
     if not cipher:
         return msg
 
+    if isinstance(msg, six.text_type):
+        # This should be a base64 encoded string, so it
+        # should encode to ascii without any problems.
+        msg = msg.encode('ascii')
+
+    if not isinstance(msg, six.binary_type):
+        raise ValueError('Only bytes(or unicodes) can be decrypted')
+
     try:
-        msg = _unpad(cipher.decrypt(base64.urlsafe_b64decode(str(msg))))
-    except Exception as e:
+        msg = _unpad(cipher.decrypt(base64.urlsafe_b64decode(msg)))
+    except (ValueError, TypeError) as e:
         raise CryptException(e)
 
     return msg
@@ -157,13 +188,13 @@ def urlsafe_decrypt(msg):
 def _pad(msg):
     """Pad the message with enough bytes to be a multiple of BLOCK_SIZE.
 
-    :param str msg: str or unicode message to be padded.
+    :param bytes msg: bytes message to be padded.
     :return: the msg with padding added.
-    :rtype: str
+    :rtype: bytes
     """
 
     padding_bytes = _get_padding_bytes(len(msg))
-    return '%s%s' % (msg, padding_bytes)
+    return msg + padding_bytes
 
 
 def _get_padding_bytes(msg_length):
@@ -184,7 +215,8 @@ def _get_padding_bytes(msg_length):
     if bytes_to_pad == 0:
         bytes_to_pad = BLOCK_SIZE
     pack_format = '%sB' % ('x' * (bytes_to_pad - 1))
-    return struct.pack(pack_format, bytes_to_pad)
+    msg = struct.pack(pack_format, bytes_to_pad)
+    return builtins.bytes(msg)
 
 
 def _unpad(msg):
@@ -194,13 +226,18 @@ def _unpad(msg):
     and strip that many bytes off the end of the message. Note that
     reading as a regular integer(i.e. struct.unpack('i')) would
     read multiple bytes off the end which would be bad if,
-    for instance, we only had one byte of padding. We also convert the message
-    to a bytearray for safety - the msg could be a unicode-encoded string,
-    in which case msg[-1:] might not remove a single byte.
+    for instance, we only had one byte of padding.
 
-    :param msg: str or unicode msg that needs to have padding stripped from it.
-    :return: string for the message with the padding removed.
+    :param msg: bytes or unicode msg that needs to have padding stripped from it.
+    :return: bytes for the message with the padding removed.
     """
-    msg_as_bytes = bytearray(msg)
-    bytes_to_strip = int(struct.unpack('B', str(msg_as_bytes[-1:]))[0])
-    return msg[:(-1 * bytes_to_strip)]
+    if not msg or len(msg) < BLOCK_SIZE:
+        raise ValueError('decrypted message was not padded correctly')
+    msg = builtins.bytes(msg)
+    bytes_to_strip = int(msg[-1])
+    # If we are trying to strip off more than BLOCK_SIZE bytes,
+    # or more bytes than there are in the msg,
+    # something has gone wrong, likely the msg was corrupt.
+    if bytes_to_strip > BLOCK_SIZE or bytes_to_strip > len(msg):
+        raise ValueError('decrypted message was not padded correctly')
+    return msg[:-bytes_to_strip]

@@ -1,4 +1,5 @@
 """Tests queue_info.py"""
+from __future__ import absolute_import
 
 import tempfile
 import unittest
@@ -38,7 +39,7 @@ class QueueInfoTest(unittest.TestCase):
         Don't have failure case. If fails, fails loudly.
         """
         queue_config = tempfile.NamedTemporaryFile(delete=True)
-        queue_config.write(self.test_string)
+        queue_config.write(self.test_string.encode('utf8'))
         queue_config.seek(0)
         queues = queue_info.QueueInfo._get_queues_from_config(
             queue_config.name, queue_info.TaskQueue)
@@ -69,7 +70,7 @@ class QueueInfoTest(unittest.TestCase):
             sqs_inst._connection = mock_sqs_connection
 
             queue_config = tempfile.NamedTemporaryFile(delete=True)
-            queue_config.write(self.test_string)
+            queue_config.write(self.test_string.encode('utf8'))
             queue_config.seek(0)
             queue_info.QueueInfo._queues = None
             queue_info.QueueInfo._simple_name_queues_map = None

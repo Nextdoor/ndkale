@@ -1,4 +1,5 @@
 """Module for kale settings for unit tests."""
+from __future__ import absolute_import
 
 import os
 
