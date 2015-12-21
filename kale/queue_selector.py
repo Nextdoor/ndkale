@@ -24,8 +24,11 @@ How to implement your own queue selection algorithm?
             # Eventually, return one of queue object from queues
             return queue
 """
+from __future__ import absolute_import
 
 import random
+
+from six.moves import range
 
 
 class SelectQueueBase(object):

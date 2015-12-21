@@ -1,4 +1,5 @@
 """Module containing task consumption functionality."""
+from __future__ import absolute_import
 
 from kale import sqs
 

@@ -9,6 +9,7 @@ Any machine that wants to use these tasks MUST have
 KALE_SETTINGS_MODULE as an environment variable or this module
 will raise an exception.
 """
+from __future__ import absolute_import
 
 import importlib
 import logging
@@ -64,7 +65,7 @@ class Settings(object):
 
         try:
             settings_module_path = os.environ[ENVIRONMENT_VARIABLE]
-        except KeyError, e:
+        except KeyError as e:
             # NOTE: This is arguably an EnvironmentError, but that causes
             # problems with Python's interactive help.
             logger.error(
@@ -74,7 +75,7 @@ class Settings(object):
 
         try:
             settings_module = importlib.import_module(settings_module_path)
-        except ImportError, e:
+        except ImportError as e:
             error = ImportError(
                 'Could not import settings "%s" (Is it on sys.path?): %s' %
                 (settings_module_path, e))

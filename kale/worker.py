@@ -2,6 +2,7 @@
 
 It's an infinite loop.
 """
+from __future__ import absolute_import
 
 import logging
 import resource
@@ -15,6 +16,7 @@ from kale import queue_info
 from kale import settings
 from kale import timeout
 from kale import utils
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 

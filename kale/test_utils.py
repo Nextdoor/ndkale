@@ -1,4 +1,5 @@
 """Helpful tools for testing kale tasks."""
+from __future__ import absolute_import
 
 from kale import exceptions
 from kale import message

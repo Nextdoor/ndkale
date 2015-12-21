@@ -1,4 +1,5 @@
 """Module testing the kale.task module."""
+from __future__ import absolute_import
 
 import mock
 import unittest
@@ -6,6 +7,7 @@ import unittest
 from kale import exceptions
 from kale import task
 from kale import test_utils
+from six.moves import range
 
 
 class TaskFailureTestCase(unittest.TestCase):

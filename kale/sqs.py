@@ -1,4 +1,5 @@
 """Base class for SQS utility classes."""
+from __future__ import absolute_import
 
 import logging
 
@@ -6,7 +7,6 @@ import boto.sqs
 import boto.sqs.connection
 
 from kale import exceptions
-
 from kale import message
 from kale import settings
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 #
 # kale documentation build configuration file, created by
 # sphinx-quickstart on Wed Feb  4 15:15:06 2015.

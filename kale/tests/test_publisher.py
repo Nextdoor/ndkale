@@ -1,4 +1,5 @@
 """Module testing the kale.publisher module."""
+from __future__ import absolute_import
 
 import mock
 import unittest

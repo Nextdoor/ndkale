@@ -1,4 +1,5 @@
 """Module containing task publishing functionality."""
+from __future__ import absolute_import
 
 import logging
 
@@ -31,7 +32,7 @@ class Publisher(sqs.SQSTalk):
                 determine how to proceed.
         """
 
-        if delay_sec > settings.SQS_MAX_TASK_DELAY_SEC:
+        if delay_sec is not None and delay_sec > settings.SQS_MAX_TASK_DELAY_SEC:
             raise exceptions.InvalidTaskDelayException(
                 'Invalid task delay_sec (%d > %d).' % (
                     delay_sec, settings.SQS_MAX_TASK_DELAY_SEC))

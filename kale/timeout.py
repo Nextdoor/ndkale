@@ -3,6 +3,7 @@
 Modeled after:
 http://stackoverflow.com/a/601168/854976
 """
+from __future__ import absolute_import
 
 import errno
 import os
