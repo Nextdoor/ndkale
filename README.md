@@ -1,5 +1,6 @@
 # Kale: Distributed task worker from Nextdoor
 
+![Apache](https://img.shields.io/hexpm/l/plug.svg) 
 [![Build Status](https://travis-ci.org/Nextdoor/ndkale.svg?branch=master)](https://travis-ci.org/Nextdoor/ndkale)
 
 Kale is a python task worker library that supports priority queues on Amazon SQS. 
