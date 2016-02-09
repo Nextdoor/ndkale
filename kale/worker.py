@@ -342,7 +342,7 @@ class Worker(object):
             # Add cleanup method when tasks are timed out?
             try:
                 with timeout.time_limit(task_inst.time_limit):
-                    task_inst.run(*message.task_args, **message.task_kwargs)
+                    self.run_task(message)
                     self._successful_messages.append(message)
                     self._incomplete_messages.remove(message)
             except Exception as err:
@@ -364,3 +364,9 @@ class Worker(object):
 
             # Increment total messages counter.
             self._total_messages_processed += 1
+
+    def run_task(self, message):
+        """Run the task contained in the message.
+        :param message: message.KaleMessage containing the task and arguments to run.
+        """
+        message.task_inst.run(*message.task_args, **message.task_kwargs)

@@ -29,7 +29,7 @@ class FibonacciTask(task.Task):
         elif n == 1:
             return 1
         else:
-            return FibonacciTask.fibonacci(n-1) + FibonacciTask.fibonacci(n-2)
+            return FibonacciTask.fibonacci(n - 1) + FibonacciTask.fibonacci(n - 2)
 
     def run_task(self, n, *args, **kwargs):
         print('fibonacci(%d) = %d' % (n, self.fibonacci(n)))
