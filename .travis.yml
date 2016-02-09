@@ -9,7 +9,7 @@ install:
   - pip freeze
 
 before_script:
-  - pip install flake8 && flake8 kale example --max-line-length 100
+  - pip install flake8 && flake8 kale example --max-line-length 100 --ignore=E731,E402
 
 script:
   - python setup.py test
