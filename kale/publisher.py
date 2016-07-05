@@ -57,7 +57,7 @@ class Publisher(sqs.SQSTalk):
 
         queue.write(sqs_msg, delay_seconds=delay_sec)
 
-        logger.info('Published task. Task id: %s; Task name: %s' % (
+        logger.debug('Published task. Task id: %s; Task name: %s' % (
             task_id, '%s.%s' % (task_class.__module__, task_class.__name__)))
 
     def publish_messages_to_dead_letter_queue(self, dlq_name, messages):
