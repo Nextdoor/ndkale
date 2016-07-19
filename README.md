@@ -9,7 +9,7 @@ Check out our blog post - [Nextdoor Taskworker: Simple, Efficient & Scalable](ht
 
 ## How does it work?
 
-![Kale-based Taskworker](task consumption](https://cloud.githubusercontent.com/assets/1719237/16959018/e4fe6378-4d97-11e6-9903-d4f4f576524d.png)
+![Kale-based Taskworker](https://cloud.githubusercontent.com/assets/1719237/16959018/e4fe6378-4d97-11e6-9903-d4f4f576524d.png)
 
 Like other distributed task queue system, publishers send task messages to queues and workers fetch messages from queues. For now, Kale supports only Amazon SQS for the queue.
 
