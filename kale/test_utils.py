@@ -91,10 +91,16 @@ class TestQueueSelector(queue_selector.SelectQueueBase):
 
     def __init__(self, queue_info):
         self.queue_info = queue_info
+        self._index = 0
+        self._total_queues = len(self.queue_info.get_queues())
 
     def get_queue(self, *args, **kwargs):
         """Returns a TaskQueue object."""
-        return self.queue_info.get_queues()[0]
+        queue = self.queue_info.get_queues()[self._index]
+        self._index += 1
+        if self._index == self._total_queues:
+            self._index = 0
+        return queue
 
 
 def new_mock_message(task_class=None):
