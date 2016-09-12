@@ -11,8 +11,6 @@ import subprocess
 from distutils.command.clean import clean
 from setuptools import setup
 
-multiprocessing
-
 PACKAGE = 'ndkale'
 __version__ = None
 with open(os.path.join('kale', 'version.py')) as f:
@@ -81,6 +79,7 @@ setup(
         'pyyaml',
         'setuptools',
         'six',
+        'tblib',
         'future',
     ],
     classifiers=classifiers,

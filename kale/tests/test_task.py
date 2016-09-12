@@ -1,12 +1,16 @@
 """Module testing the kale.task module."""
 from __future__ import absolute_import
+from __future__ import print_function
 
 import mock
+import sys
+import traceback
 import unittest
 
 from kale import exceptions
 from kale import task
 from kale import test_utils
+from kale import settings
 from six.moves import range
 
 
@@ -20,6 +24,10 @@ class TaskFailureTestCase(unittest.TestCase):
         self.addCleanup(patcher.stop)
         return patch
 
+    def setUp(self):
+        # When using a child process, clear subprocess pool to reload mocked methods.
+        task.Task._terminate_task_process_pool()
+
     def testRunWorker(self):
         """Test running a task."""
         setup_env = self._create_patch(
@@ -29,8 +37,11 @@ class TaskFailureTestCase(unittest.TestCase):
         clean_env = self._create_patch(
             'kale.task.Task._clean_task_environment')
 
+        settings.RUN_TASK_AS_CHILD = False
+
         task_inst = test_utils.new_mock_task(task_class=test_utils.MockTask)
         task_args = [1, 'a']
+
         task_inst.run(*task_args)
 
         setup_env.assert_called_once_with()
@@ -38,6 +49,15 @@ class TaskFailureTestCase(unittest.TestCase):
         post_run.assert_called_once_with(*task_args)
         clean_env.assert_called_once_with(
             task_id='mock_task', task_name='kale.test_utils.MockTask')
+
+    def testRunWorkerChildProcess(self):
+        """Test running a task in the child process.."""
+        settings.RUN_TASK_AS_CHILD = True
+
+        task_inst = test_utils.new_mock_task(task_class=test_utils.MockTask)
+        task_args = [1, 'a']
+
+        task_inst.run(*task_args)
 
     def testRunWorkerFailTask(self):
         """Test running a task."""
@@ -47,6 +67,8 @@ class TaskFailureTestCase(unittest.TestCase):
         post_run = self._create_patch('kale.task.Task._post_run')
         clean_env = self._create_patch(
             'kale.task.Task._clean_task_environment')
+
+        settings.RUN_TASK_AS_CHILD = False
 
         task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
         task_inst._start_time = 1
@@ -61,6 +83,20 @@ class TaskFailureTestCase(unittest.TestCase):
         clean_env.assert_called_once_with(
             task_id='fail_task', task_name='kale.test_utils.FailTask',
             exc=exc_ctxt_mngr.exception)
+        self.assertTrue(task_inst._end_time > 0)
+        self.assertTrue(task_inst._task_latency_sec > 0)
+
+    def testRunWorkerFailTaskChildProcess(self):
+        """Test running a task in the child process.."""
+        settings.RUN_TASK_AS_CHILD = True
+
+        task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
+        task_inst._start_time = 1
+        task_args = [1, 'a']
+
+        with self.assertRaises(exceptions.TaskException):
+            task_inst.run(*task_args)
+
         self.assertTrue(task_inst._end_time > 0)
         self.assertTrue(task_inst._task_latency_sec > 0)
 
@@ -161,7 +197,7 @@ class TaskFailureTestCase(unittest.TestCase):
         """Task task target runtime exceeded."""
 
         task_inst = test_utils.new_mock_task(
-            task_class=test_utils.SlowButNotTooSlowTask)
+            task_class=test_utils.SlowerThanExpectedTask)
 
         with mock.patch(
                 'kale.task.Task._alert_runtime_exceeded') as time_exceeded:
@@ -180,6 +216,8 @@ class TaskFailureTestCase(unittest.TestCase):
         raised_exc = exceptions.BlacklistedException()
         check_blacklist.side_effect = raised_exc
 
+        settings.RUN_TASK_AS_CHILD = False
+
         task_inst = test_utils.new_mock_task(task_class=test_utils.MockTask)
         task_inst._start_time = 1
         task_args = [1, 'a']
@@ -194,6 +232,21 @@ class TaskFailureTestCase(unittest.TestCase):
             task_id='mock_task', task_name='kale.test_utils.MockTask',
             exc=raised_exc)
 
+    def testBlacklistedTaskFailsChildProcess(self):
+        """Test that a blacklisted task raises an exception in the child process.."""
+        check_blacklist = self._create_patch('kale.task.Task._check_blacklist')
+        raised_exc = exceptions.BlacklistedException()
+        check_blacklist.side_effect = raised_exc
+
+        settings.RUN_TASK_AS_CHILD = True
+
+        task_inst = test_utils.new_mock_task(task_class=test_utils.MockTask)
+        task_inst._start_time = 1
+        task_args = [1, 'a']
+
+        with self.assertRaises(exceptions.BlacklistedException):
+            task_inst.run(*task_args)
+
     def testBlacklistedTaskNoRetries(self):
         """Test that a blacklisted task raises an exception."""
         setup_env = self._create_patch(
@@ -205,6 +258,8 @@ class TaskFailureTestCase(unittest.TestCase):
         check_blacklist = self._create_patch('kale.task.Task._check_blacklist')
         raised_exc = exceptions.BlacklistedException()
         check_blacklist.side_effect = raised_exc
+
+        settings.RUN_TASK_AS_CHILD = False
 
         mock_message = test_utils.new_mock_message(
             task_class=test_utils.MockTask)
@@ -226,3 +281,91 @@ class TaskFailureTestCase(unittest.TestCase):
         permanent_failure = not task_inst.__class__.handle_failure(
             mock_message, raised_exc)
         self.assertTrue(permanent_failure)
+
+    def testBlacklistedTaskNoRetriesChildProcess(self):
+        """Test that a blacklisted task raises an exception in the child process.."""
+        check_blacklist = self._create_patch('kale.task.Task._check_blacklist')
+        raised_exc = exceptions.BlacklistedException()
+        check_blacklist.side_effect = raised_exc
+
+        settings.RUN_TASK_AS_CHILD = True
+
+        mock_message = test_utils.new_mock_message(
+            task_class=test_utils.MockTask)
+        task_inst = mock_message.task_inst
+        task_inst._start_time = 1
+        task_args = [1, 'a']
+
+        with self.assertRaises(exceptions.BlacklistedException):
+            task_inst.run(*task_args)
+
+        # Check that task
+        permanent_failure = not task_inst.__class__.handle_failure(
+            mock_message, raised_exc)
+        self.assertTrue(permanent_failure)
+
+    def testExceptionStacktrace(self):
+        """Test that the exception stacktrace is perserved."""
+        settings.RUN_TASK_AS_CHILD = False
+
+        task_inst = test_utils.new_mock_task(task_class=test_utils.MultiFunctionTask)
+        task_inst._start_time = 1
+        expected_stack_trace_lines = [
+            'task_inst.run()',
+            'self._run_single(*args, **kwargs)',
+            'self.run_task(*args, **kwargs)',
+            'self._a()',
+            'self._b()',
+            'self._c()',
+            "raise exceptions.TaskException('Task failed.')"]
+
+        # Run in try/except instead of assertRaises to use sys.exc_info.
+        try:
+            task_inst.run()
+            self.fail('Should have raised TaskException')
+        except exceptions.TaskException:
+            stack_trace = ''.join(traceback.format_exception(*sys.exc_info())).split('\n')
+            # Remove all lines that aren't the actual function calls.
+            stack_trace_lines = [line.strip() for line in stack_trace if line and
+                                 'File' not in line and
+                                 'Traceback' not in line and
+                                 'TaskException: ' not in line]
+            self.assertEqual(stack_trace_lines, expected_stack_trace_lines)
+
+        self.assertTrue(task_inst._end_time > 0)
+        self.assertTrue(task_inst._task_latency_sec > 0)
+
+    def testExceptionStacktraceChildProcess(self):
+        """Test that the exception stacktrace is perserved when running as a child process."""
+        settings.RUN_TASK_AS_CHILD = True
+
+        task_inst = test_utils.new_mock_task(task_class=test_utils.MultiFunctionTask)
+        task_inst._start_time = 1
+        expected_stack_trace_lines = [
+            'task_inst.run()',
+            'self._run_multi(*args, **kwargs)',
+            'exc.reraise()',
+            'utils.raise_(*self.exc_info)',
+            'task_inst.run_task(*args, **kwargs)',
+            'self._a()',
+            'self._b()',
+            'self._c()',
+            "raise exceptions.TaskException('Task failed.')"]
+
+        # Run in try/except instead of assertRaises to use sys.exc_info.
+        try:
+            task_inst.run()
+            self.fail('Should have raised TaskException')
+        except exceptions.TaskException:
+            stack_trace = ''.join(traceback.format_exception(*sys.exc_info())).split('\n')
+            # Remove all lines that aren't the actual function calls.
+            # Note: exc.with_traceback is the function call added by future.utils.raise_ if py3.
+            stack_trace_lines = [line.strip() for line in stack_trace if line and
+                                 'File' not in line and
+                                 'Traceback' not in line and
+                                 'TaskException: ' not in line and
+                                 'exc.with_traceback' not in line]
+            self.assertEqual(stack_trace_lines, expected_stack_trace_lines)
+
+        self.assertTrue(task_inst._end_time > 0)
+        self.assertTrue(task_inst._task_latency_sec > 0)
