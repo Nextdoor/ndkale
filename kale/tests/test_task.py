@@ -312,7 +312,7 @@ class TaskFailureTestCase(unittest.TestCase):
         task_inst._start_time = 1
         expected_stack_trace_lines = [
             'task_inst.run()',
-            'self._run_single(*args, **kwargs)',
+            'self._run_task(*args, **kwargs)',
             'self.run_task(*args, **kwargs)',
             'self._a()',
             'self._b()',
@@ -343,7 +343,7 @@ class TaskFailureTestCase(unittest.TestCase):
         task_inst._start_time = 1
         expected_stack_trace_lines = [
             'task_inst.run()',
-            'self._run_multi(*args, **kwargs)',
+            'self._run_task_as_child(*args, **kwargs)',
             'exc.reraise()',
             'utils.raise_(*self.exc_info)',
             'task_inst.run_task(*args, **kwargs)',
