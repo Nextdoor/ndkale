@@ -191,12 +191,12 @@ class Task(object):
         4) call super() at the start of _post_run override.
         5) Subclass's override _post_run logic.
         """
-        if not settings.is_multiprocess_mode():
-            self._run_single(*args, **kwargs)
+        if not settings.should_run_task_as_child():
+            self._run_task(*args, **kwargs)
         else:
-            self._run_multi(*args, **kwargs)
+            self._run_task_as_child(*args, **kwargs)
 
-    def _run_single(self, *args, **kwargs):
+    def _run_task(self, *args, **kwargs):
         """Runs the task in single process mode.
 
         This will use SIGALRM to handle timeouts.
@@ -233,7 +233,7 @@ class Task(object):
             # Remove signal.
             signal.alarm(0)
 
-    def _run_multi(self, *args, **kwargs):
+    def _run_task_as_child(self, *args, **kwargs):
         """Runs the task in a subprocess.
 
         The subprocess runs _task_wrapper, which handles all task logic.
@@ -400,9 +400,8 @@ def _task_wrapper(task_inst, args, kwargs):
     task_inst._setup_task_environment()
     task_inst._pre_run(*args, **kwargs)
 
-    if settings.is_multiprocess_mode():
-        # Remove SIGTERM signal handler; the parent process handles all the cleanup.
-        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    # Remove SIGTERM signal handler; the parent process handles all the cleanup.
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
 
     try:
         # This raises an exception if the task should not be attempted.

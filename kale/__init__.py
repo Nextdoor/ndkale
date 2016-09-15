@@ -91,7 +91,7 @@ class Settings(object):
         # have been properly configured.
         self.PROPERLY_CONFIGURED = True
 
-    def is_multiprocess_mode(self):
+    def should_run_task_as_child(self):
         return self.RUN_TASK_AS_CHILD
 
 
