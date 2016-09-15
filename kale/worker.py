@@ -14,7 +14,6 @@ from kale import consumer
 from kale import publisher
 from kale import queue_info
 from kale import settings
-from kale import timeout
 from kale import utils
 from six.moves import range
 
@@ -262,7 +261,6 @@ class Worker(object):
         num_completed, num_incomplete = self._release_batch()
 
         self._on_post_batch_run(num_completed, num_incomplete, message_batch)
-
         return True
 
     def _release_batch(self):
@@ -341,10 +339,9 @@ class Worker(object):
 
             # Add cleanup method when tasks are timed out?
             try:
-                with timeout.time_limit(task_inst.time_limit):
-                    self.run_task(message)
-                    self._successful_messages.append(message)
-                    self._incomplete_messages.remove(message)
+                message.task_inst.run(*message.task_args, **message.task_kwargs)
+                self._successful_messages.append(message)
+                self._incomplete_messages.remove(message)
             except Exception as err:
                 # Re-publish failed tasks.
                 # As an optimization we could run all of the failures from a
@@ -364,9 +361,3 @@ class Worker(object):
 
             # Increment total messages counter.
             self._total_messages_processed += 1
-
-    def run_task(self, message):
-        """Run the task contained in the message.
-        :param message: message.KaleMessage containing the task and arguments to run.
-        """
-        message.task_inst.run(*message.task_args, **message.task_kwargs)
