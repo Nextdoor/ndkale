@@ -243,7 +243,7 @@ class Task(object):
         """
         pool = Task._get_task_process_pool()
         self._record_start()
-        terminate = False
+        timed_out = False
         try:
             process = pool.apply_async(_task_wrapper, args=(self, args, kwargs))
             exc = process.get(self.time_limit)
@@ -251,14 +251,13 @@ class Task(object):
                 exc.reraise()
         except multiprocessing.TimeoutError:
             # Task took too long: hard-terminate the subprocess.
-            terminate = True
+            timed_out = True
             # Raise as an exception class that's expected in worker._handle_failures.
             raise exceptions.TimeoutException(os.strerror(errno.ETIME))
         finally:
             self._record_end()
-            # Check the worker's memory usage.
-            is_memory_ok = pool.apply_async(_is_memory_ok).get()
-            if terminate or not is_memory_ok:
+            # Check if it timed out. Otherwise, check the worker's memory usage.
+            if timed_out or not pool.apply_async(_is_memory_ok).get():
                 Task._terminate_task_process_pool()
 
     def run_task(self, *args, **kwargs):
