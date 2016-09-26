@@ -13,8 +13,8 @@ import uuid
 from future import utils
 
 # Support pickling tracebacks from a subprocess.
-from tblib import pickling_support
-pickling_support.install()
+# from tblib import pickling_support
+# pickling_support.install()
 
 from kale import exceptions
 from kale import publisher
