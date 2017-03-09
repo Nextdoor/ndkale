@@ -1,20 +1,9 @@
 """Module containing the base class for tasks."""
 from __future__ import absolute_import
 
-import errno
 import logging
-import os
-import multiprocessing
-import signal
-import sys
 import time
-import resource
 import uuid
-from future import utils
-
-# Support pickling tracebacks from a subprocess.
-from tblib import pickling_support
-pickling_support.install()
 
 from kale import exceptions
 from kale import publisher
@@ -60,9 +49,6 @@ class Task(object):
     # String representation the a task queue, each task must override
     # this value.
     queue = None
-
-    # Pool to run tasks in.
-    _task_process_pool = None
 
     def __init__(self, message_body=None, *args, **kwargs):
         """Initialize an instance of a task.
@@ -191,74 +177,28 @@ class Task(object):
         4) call super() at the start of _post_run override.
         5) Subclass's override _post_run logic.
         """
-        if not settings.should_run_task_as_child():
-            self._run_task(*args, **kwargs)
-        else:
-            self._run_task_as_child(*args, **kwargs)
 
-    def _run_task(self, *args, **kwargs):
-        """Runs the task in single process mode.
+        self._setup_task_environment()
+        self._pre_run(*args, **kwargs)
 
-        This will use SIGALRM to handle timeouts.
-        """
-        self._record_start()
         try:
-            def _handle_timeout(signum, frame):
-                raise exceptions.TimeoutException(os.strerror(errno.ETIME))
+            # This raises an exception if the task should not be attempted.
+            # This enables tasks to be blacklisted by ID or type.
+            self._check_blacklist(*args, **kwargs)
+            self.run_task(*args, **kwargs)
+        except Exception as exc:
+            # Record latency here.
+            self._end_time = time.time()
+            self._task_latency_sec = self._end_time - self._start_time
 
-            # Use sigalrm to handle timeout.
-            signal.signal(signal.SIGALRM, _handle_timeout)
-            signal.alarm(self.time_limit)
-
-            self._setup_task_environment()
-            self._pre_run(*args, **kwargs)
-
-            try:
-                # This raises an exception if the task should not be attempted.
-                self._check_blacklist(*args, **kwargs)
-                self.run_task(*args, **kwargs)
-            except Exception as exc:
-                # Cleanup the environment this task was running in right away.
-                self._clean_task_environment(task_id=self.task_id,
-                                             task_name=self.task_name, exc=exc)
-                raise
-
-            self._post_run(*args, **kwargs)
+            # Cleanup the environment this task was running in right away.
             self._clean_task_environment(task_id=self.task_id,
-                                         task_name=self.task_name)
-        finally:
-            self._record_end()
-            # Remove handler.
-            signal.signal(signal.SIGALRM, signal.SIG_DFL)
-            # Remove signal.
-            signal.alarm(0)
+                                         task_name=self.task_name, exc=exc)
+            raise
 
-    def _run_task_as_child(self, *args, **kwargs):
-        """Runs the task in a subprocess.
-
-        The subprocess runs _task_wrapper, which handles all task logic.
-
-        Because the start and end time must be known to the worker,
-        _record_start() and _record_end() are run in the context of the parent process.
-        """
-        pool = Task._get_task_process_pool()
-        self._record_start()
-        timed_out = False
-        try:
-            process = pool.apply_async(_task_wrapper, args=(self, args, kwargs))
-            exc = process.get(self.time_limit)
-            if exc is not None:
-                exc.reraise()
-        except multiprocessing.TimeoutError:
-            # Task took too long: hard-terminate the subprocess.
-            timed_out = True
-            # Raise as an exception class that's expected in worker._handle_failures.
-            raise exceptions.TimeoutException(os.strerror(errno.ETIME))
-        finally:
-            self._record_end()
-            # Check if it timed out. Otherwise, check the worker's memory usage.
-            if timed_out or not pool.apply_async(_is_memory_ok).get():
-                Task._terminate_task_process_pool()
+        self._post_run(*args, **kwargs)
+        self._clean_task_environment(task_id=self.task_id,
+                                     task_name=self.task_name)
 
     def run_task(self, *args, **kwargs):
         """Run the task, this must be implemented by subclasses."""
@@ -307,29 +247,21 @@ class Task(object):
         """
         pass
 
-    def _record_start(self):
-        """Records that the task has started."""
-        self._start_time = time.time()
-
-    def _record_end(self):
-        """Records that the task has ended."""
-        self._end_time = time.time()
-        self._task_latency_sec = self._end_time - self._start_time
-
-        if self.target_runtime:
-            if self._task_latency_sec >= self.target_runtime:
-                self._alert_runtime_exceeded()
-
     def _pre_run(self, *args, **kwargs):
         """Called immediately prior to a task running."""
-        pass
+        self._start_time = time.time()
 
     def _post_run(self, *args, **kwargs):
         """Called immediately after a task finishes.
 
         This will not be called if the task fails.
         """
-        pass
+        self._end_time = time.time()
+        self._task_latency_sec = self._end_time - self._start_time
+
+        if self.target_runtime:
+            if self._task_latency_sec >= self.target_runtime:
+                self._alert_runtime_exceeded()
 
     def _alert_runtime_exceeded(self, *args, **kwargs):
         """Handle the case where a task exceeds its alert runtime.
@@ -363,65 +295,3 @@ class Task(object):
                        (failure_type, message.task_name, message.task_id,
                         exception))
         logger.error(message_str)
-
-    @classmethod
-    def _get_task_process_pool(cls):
-        if Task._task_process_pool is None:
-            Task._task_process_pool = multiprocessing.Pool(1)
-        return Task._task_process_pool
-
-    @classmethod
-    def _terminate_task_process_pool(cls):
-        if Task._task_process_pool is not None:
-            Task._task_process_pool.terminate()
-        Task._task_process_pool = None
-
-
-class RemoteException(object):
-    """Utility class for reraising an exception from a remote process.
-
-    Keeps the original stack trace.
-    """
-    def __init__(self):
-        self.exc_info = sys.exc_info()
-
-    def reraise(self):
-        utils.raise_(*self.exc_info)
-
-
-def _task_wrapper(task_inst, args, kwargs):
-    """Task wrapper function.
-
-    In single-process mode, this will return any exception raised.
-
-    In multi-process mode, this will return a RemoteException for any exceptions raised.
-    """
-    task_inst._setup_task_environment()
-    task_inst._pre_run(*args, **kwargs)
-
-    # Remove SIGTERM signal handler; the parent process handles all the cleanup.
-    signal.signal(signal.SIGTERM, signal.SIG_DFL)
-
-    try:
-        # This raises an exception if the task should not be attempted.
-        task_inst._check_blacklist(*args, **kwargs)
-        task_inst.run_task(*args, **kwargs)
-    except Exception as exc:
-        # Cleanup the environment this task was running in right away.
-        task_inst._clean_task_environment(task_id=task_inst.task_id,
-                                          task_name=task_inst.task_name, exc=exc)
-        return RemoteException()
-
-    task_inst._post_run(*args, **kwargs)
-    task_inst._clean_task_environment(task_id=task_inst.task_id,
-                                      task_name=task_inst.task_name)
-
-
-def _is_memory_ok():
-    resource_data = resource.getrusage(resource.RUSAGE_SELF)
-    if resource_data.ru_maxrss < settings.DIE_ON_RESIDENT_SET_SIZE_MB * 1024:
-        return True
-
-    logger.info('Worker memory usages exceeds max: %d. Restarting worker.' %
-                resource_data.ru_maxrss)
-    return False

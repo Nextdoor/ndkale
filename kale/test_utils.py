@@ -1,8 +1,6 @@
 """Helpful tools for testing kale tasks."""
 from __future__ import absolute_import
 
-import sys
-
 from kale import exceptions
 from kale import message
 from kale import queue_info
@@ -41,36 +39,18 @@ class TimeoutTask(task.Task):
         raise exceptions.TimeoutException('Task failed.')
 
 
-class SlowerThanExpectedTask(task.Task):
+class SlowButNotTooSlowTask(task.Task):
 
     time_limit = 100
-    target_runtime = sys.float_info.epsilon
+    target_runtime = 90
 
     @classmethod
     def _get_task_id(self, *args, **kwargs):
-        return 'slower_than_expected_task'
+        return 'moderately_slow_task'
 
     def run_task(self, *args, **kwargs):
-        pass
-
-
-class MultiFunctionTask(task.Task):
-
-    @classmethod
-    def _get_task_id(cls, *args, **kwargs):
-        return 'multi_function_task'
-
-    def run_task(self, *args, **kwargs):
-        self._a()
-
-    def _a(self):
-        self._b()
-
-    def _b(self):
-        self._c()
-
-    def _c(self):
-        raise exceptions.TaskException('Task failed.')
+        # Ugly trick.
+        self._start_time = self._start_time - self.target_runtime
 
 
 class FailTaskNoRetries(FailTask):

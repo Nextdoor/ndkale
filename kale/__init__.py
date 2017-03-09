@@ -91,9 +91,6 @@ class Settings(object):
         # have been properly configured.
         self.PROPERLY_CONFIGURED = True
 
-    def should_run_task_as_child(self):
-        return self.RUN_TASK_AS_CHILD
-
 
 # Instantiate the settings globally.
 settings = Settings()
