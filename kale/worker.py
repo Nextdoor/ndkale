@@ -43,14 +43,14 @@ class Worker(object):
         self._consumer = consumer.Consumer()
 
         queue_class = utils.class_import_from_path(settings.QUEUE_CLASS)
-        q_info = queue_info.QueueInfo(
+        self._queue_info = queue_info.QueueInfo(
             config_file=settings.QUEUE_CONFIG,
             sqs_talk=self._consumer,
             queue_cls=queue_class)
 
         queue_selector_class = utils.class_import_from_path(
             settings.QUEUE_SELECTOR)
-        self._queue_selector = queue_selector_class(q_info)
+        self._queue_selector = queue_selector_class(self._queue_info)
 
         # The worker will publish permanently failed tasks to a
         # dead-letter-queue.
@@ -173,18 +173,54 @@ class Worker(object):
                      'Time remaining: %d sec') % (
             task.task_id, self._batch_queue.name, time_remaining_sec))
 
-    def run(self):
-        """This method starts the task processing loop."""
+    def run(self, kamikaze=False):
+        """This method starts the task processing loop.
+
+        :param kamikaze bool - Whether to destroy queues and exit when all queues are empty."""
 
         self._on_pre_run_worker()
 
+        # Start different run loops based on destroy_when_all_empty.
+        if kamikaze:
+            self._run_kamikaze()
+        else:
+            self._run_normal()
+
+    def _run_normal(self):
+        """Standard run loop."""
         while self._check_process_resources():
             self._batch_queue = self._queue_selector.get_queue()
-            for i in range(self._batch_queue.num_iterations):
+            for _ in range(self._batch_queue.num_iterations):
                 if not self._run_single_iteration():
-                    # If the iteration didn't process any tasks break out
+                    # If the iteration didn't process any tasks, break out
                     # of this loop and move on to another queue.
                     break
+
+    def _run_kamikaze(self):
+        """Run loop that destroys queues and exits when all queues are empty."""
+        empty_queues = {q.name: False
+                        for q in self._queue_info.get_queues()}
+
+        kamikaze = False
+        while self._check_process_resources():
+            self._batch_queue = self._queue_selector.get_queue()
+            for _ in range(self._batch_queue.num_iterations):
+                if not self._run_single_iteration():
+                    empty_queues[self._batch_queue.name] = True
+                    if all(value for value in empty_queues.values()):
+                        logger.info('All queues are empty, starting kamikaze...')
+                        kamikaze = True
+                    # If the iteration didn't process any tasks, break out
+                    # of this loop and move on to another queue.
+                    break
+                else:
+                    empty_queues[self._batch_queue.name] = False
+            if kamikaze:
+                break
+
+        for queue in self._queue_info.get_queues():
+            if not self._consumer.delete_queue(queue.name):
+                logger.error('Failed to delete queue %s' % queue.name)
 
     def _check_process_resources(self):
         """Check if the process is still is abusing resources & should continue
@@ -201,7 +237,7 @@ class Worker(object):
                 settings.DIE_ON_RESIDENT_SET_SIZE_MB * 1024):
 
             if self._dirty:
-                # We only log when the worker has been infected by  tasks.
+                # We only log when the worker has been infected by tasks.
                 logger.info('Worker process data.')
             return True
 
@@ -239,7 +275,7 @@ class Worker(object):
     def _run_single_iteration(self):
         """Run a single iteration of the task processing loop.
 
-        :return: True if we were able to process a batch, False is there were
+        :return: True if we were able to process a batch, False if there were
             no messages.
         """
         message_batch = self._consumer.fetch_batch(
@@ -250,7 +286,7 @@ class Worker(object):
 
         self._dirty = bool(message_batch)
         if not message_batch:
-            # No any messages in this queue. Let's re-select queue again.
+            # No messages in this queue. Let's re-select queue again.
             return False
 
         self._on_pre_batch_run(message_batch)

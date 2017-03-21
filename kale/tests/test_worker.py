@@ -31,7 +31,36 @@ class WorkerTestCase(unittest.TestCase):
         worker_inst = worker.Worker()
 
         self.assertTrue(worker_inst is not None)
-        startup_handler.assert_called_once_with()
+        startup_handler.assert_called_once()
+
+    def testRunDestructive(self):
+        """Test an iteration that has tasks and has destroy_when_all_empty set."""
+        mock_consumer_init = self._create_patch('kale.consumer.Consumer.__init__')
+        mock_consumer_init.return_value = None
+
+        self._create_patch('kale.worker.Worker._on_pre_run_worker')
+
+        mock_check_process_resources = self._create_patch(
+            'kale.worker.Worker._check_process_resources')
+        mock_check_process_resources.return_value = True
+
+        mock_consumer_fetch_batch = self._create_patch(
+            'kale.consumer.Consumer.fetch_batch')
+        mock_consumer_fetch_batch.return_value = None
+
+        startup_handler = self._create_patch('kale.settings.ON_WORKER_STARTUP')
+
+        worker_inst = worker.Worker()
+
+        self.assertTrue(worker_inst is not None)
+        startup_handler.assert_called_once()
+
+        mock_delete_queue = self._create_patch('kale.consumer.Consumer.delete_queue')
+        mock_delete_queue.return_value = True
+
+        worker_inst.run(kamikaze=True)
+
+        self.assertEqual(mock_delete_queue.call_count, 3)
 
     def testRunIterationWithTasks(self):
         """Test an iteration that has tasks."""

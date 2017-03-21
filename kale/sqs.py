@@ -86,3 +86,18 @@ class SQSTalk(object):
         :rtype: list[Queue]
         """
         return self._connection.get_all_queues(prefix)
+
+    def delete_queue(self, queue_name):
+        """Deletes a queue.
+
+        :param str queue_name: string for queue name.
+        :return: True if delete succeeded, False otherwise.
+        :rtype: bool
+        """
+        # Safety - Make sure queue is referenced locally.
+        if queue_name not in self._queues:
+            logger.error('Tried to delete unknown queue: %s' % queue_name)
+            return False
+
+        logger.info('Deleting queue %s' % queue_name)
+        return self._connection.delete_queue(queue_name)
