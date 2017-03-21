@@ -198,7 +198,7 @@ class Worker(object):
         resource_data = resource.getrusage(resource.RUSAGE_SELF)
 
         if resource_data.ru_maxrss < (
-                settings.DIE_ON_RESIDENT_SET_SIZE_MB * 1024):
+                settings.DIE_ON_RESIDENT_SET_SIZE_MB * 1024 * 1024):
 
             if self._dirty:
                 # We only log when the worker has been infected by  tasks.
