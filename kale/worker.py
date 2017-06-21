@@ -321,7 +321,7 @@ class Worker(object):
         """
 
         # All messages start as incomplete.
-        self._incomplete_messages = message_batch
+        self._incomplete_messages = list(message_batch)
         self._successful_messages = []
         self._failed_messages = []
 
@@ -343,8 +343,6 @@ class Worker(object):
             try:
                 with timeout.time_limit(task_inst.time_limit):
                     self.run_task(message)
-                    self._successful_messages.append(message)
-                    self._incomplete_messages.remove(message)
             except Exception as err:
                 # Re-publish failed tasks.
                 # As an optimization we could run all of the failures from a
@@ -360,6 +358,8 @@ class Worker(object):
                 self._on_task_failed(message, time_remaining_sec, err,
                                      permanent_failure)
             else:
+                self._successful_messages.append(message)
+                self._incomplete_messages.remove(message)
                 self._on_task_succeeded(message, time_remaining_sec)
 
             # Increment total messages counter.
