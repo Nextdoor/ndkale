@@ -100,5 +100,6 @@ def main():
     benchmark = Benchmark(args.config_file, args.workers, args.iterations)
     benchmark.run()
 
+
 if __name__ == '__main__':
     main()
