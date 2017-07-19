@@ -90,6 +90,22 @@ class WorkerTestCase(unittest.TestCase):
         assert worker_inst._terminated, '_terminated should be True'
         shutdown_handler.assert_called_once_with()
 
+    def testCleanupWorkerStopOutsideBatch(self):
+        """Test cleanup worker."""
+        mock_consumer = self._create_patch('kale.consumer.Consumer')
+        release_batch = self._create_patch('kale.worker.Worker._release_batch')
+        shutdown_handler = self._create_patch(
+            'kale.settings.ON_WORKER_SHUTDOWN')
+        sys_exit = self._create_patch('sys.exit')
+        worker_inst = worker.Worker()
+        worker_inst._batch_released = True
+        mock_consumer.assert_called_once_with()
+        worker_inst._cleanup_worker(signal.SIGABRT, None)
+        assert not release_batch.called
+        sys_exit.assert_called_once_with(0)
+        assert worker_inst._terminated, '_terminated should be True'
+        shutdown_handler.assert_called_once_with()
+
     def testCleanupWorkerSuspend(self):
         """Test cleanup worker."""
         mock_consumer = self._create_patch('kale.consumer.Consumer')
@@ -146,6 +162,8 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(0, len(worker_inst._successful_messages))
         self.assertEqual(0, len(worker_inst._failed_messages))
         self.assertEqual(0, len(worker_inst._permanent_failures))
+
+        assert worker_inst._batch_released, '_batch_released should be True'
 
     def testReleaseBatchWithPermanent(self):
         """Test releasing a batch where the spare time is over the threshold.

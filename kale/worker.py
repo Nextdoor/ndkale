@@ -75,8 +75,10 @@ class Worker(object):
         for sig in SIGNALS_TO_HANDLE:
             signal.signal(sig, self._cleanup_worker)
 
-        # Use lock and termination flag to avoid races when handling a cleanup signal.
+        # Use lock, batch released flag, and terminated flag
+        # to avoid races when handling a cleanup signal.
         self._work_lock = threading.Lock()
+        self._batch_released = False
         self._terminated = False
 
         # Allow the client of this library to do any setup before
@@ -191,6 +193,7 @@ class Worker(object):
                     # of this loop and move on to another queue.
                     break
                 if self._terminated:
+                    # Stop running.
                     return
 
     def _check_process_resources(self):
@@ -232,7 +235,11 @@ class Worker(object):
         if signum != signal.SIGTSTP:
             self._terminated = True
 
-        num_completed, num_incomplete = self._release_batch()
+        num_completed = 0
+        num_incomplete = 0
+        with self._work_lock:
+            if not self._batch_released:
+                num_completed, num_incomplete = self._release_batch()
 
         # When the process is suspended we release tasks and then return to the
         # main loop.
@@ -263,15 +270,21 @@ class Worker(object):
             # No any messages in this queue. Let's re-select queue again.
             return False
 
+        self._batch_released = False
+
         self._on_pre_batch_run(message_batch)
 
         self._batch_stop_time = time.time() + \
             self._batch_queue.visibility_timeout_sec
 
         self._run_batch(message_batch)
-        num_completed, num_incomplete = self._release_batch()
+        with self._work_lock:
+            if self._batch_released:
+                # The batch was already released by the cleanup handler.
+                return True
 
-        self._on_post_batch_run(num_completed, num_incomplete, message_batch)
+            num_completed, num_incomplete = self._release_batch()
+            self._on_post_batch_run(num_completed, num_incomplete, message_batch)
 
         return True
 
@@ -284,47 +297,45 @@ class Worker(object):
             the count of tasks that were incomplete.
         :rtype: tuple
         """
-        with self._work_lock:
-            if self._terminated:
-                return
+        # Delete from queues (failed messages are re-published as new tasks)
+        messages_to_be_deleted = self._successful_messages + \
+            self._failed_messages
+        # Set timeout to 0 (if there is time left)
+        # As an enhancement, we reset the timeout on tasks that didn't get
+        # attempted if the remaining timeout is greater than some threshold.
+        # and example of this being helpful is if a 5 minute task was given the
+        # opportunity to run with 4 minutes left (and declines). This will
+        # release the task 4 minutes before it previously would have.
 
-            # Delete from queues (failed messages are re-published as new tasks)
-            messages_to_be_deleted = self._successful_messages + \
-                self._failed_messages
-            # Set timeout to 0 (if there is time left)
-            # As an enhancement, we reset the timeout on tasks that didn't get
-            # attempted if the remaining timeout is greater than some threshold.
-            # and example of this being helpful is if a 5 minute task was given the
-            # opportunity to run with 4 minutes left (and declines). This will
-            # release the task 4 minutes before it previously would have.
+        if (self._batch_stop_time - time.time()) > \
+                settings.RESET_TIMEOUT_THRESHOLD:
+            messages_to_be_released = self._incomplete_messages
+        else:
+            messages_to_be_released = []
 
-            if (self._batch_stop_time - time.time()) > \
-                    settings.RESET_TIMEOUT_THRESHOLD:
-                messages_to_be_released = self._incomplete_messages
-            else:
-                messages_to_be_released = []
+        if messages_to_be_deleted:
+            # Note: This includes failed tasks.
+            self._consumer.delete_messages(messages_to_be_deleted,
+                                           self._batch_queue.name)
 
-            if messages_to_be_deleted:
-                # Note: This includes failed tasks.
-                self._consumer.delete_messages(messages_to_be_deleted,
-                                               self._batch_queue.name)
+        if messages_to_be_released:
+            # This is only tasks that we didn't get the chance to attempt.
+            self._consumer.release_messages(messages_to_be_released,
+                                            self._batch_queue.name)
 
-            if messages_to_be_released:
-                # This is only tasks that we didn't get the chance to attempt.
-                self._consumer.release_messages(messages_to_be_released,
-                                                self._batch_queue.name)
+        # Send permanently failed tasks to the dead-letter-queue.
+        if self._permanent_failures:
+            self._publisher.publish_messages_to_dead_letter_queue(
+                self._batch_queue.dlq_name, self._permanent_failures)
+            self._on_permanent_failure_batch()
 
-            # Send permanently failed tasks to the dead-letter-queue.
-            if self._permanent_failures:
-                self._publisher.publish_messages_to_dead_letter_queue(
-                    self._batch_queue.dlq_name, self._permanent_failures)
-                self._on_permanent_failure_batch()
+        # All messages start as incomplete.
+        self._incomplete_messages = []
+        self._successful_messages = []
+        self._failed_messages = []
+        self._permanent_failures = []
 
-            # All messages start as incomplete.
-            self._incomplete_messages = []
-            self._successful_messages = []
-            self._failed_messages = []
-            self._permanent_failures = []
+        self._batch_released = True
 
         return len(messages_to_be_deleted), len(messages_to_be_released)
 
@@ -334,7 +345,7 @@ class Worker(object):
         :param list[KaleMessage] message_batch: list of consumable messages.
         """
         with self._work_lock:
-            if self._terminated:
+            if self._batch_released:
                 return
             # All messages start as incomplete.
             self._incomplete_messages = list(message_batch)
@@ -364,7 +375,7 @@ class Worker(object):
                 # As an optimization we could run all of the failures from a
                 # batch together.
                 with self._work_lock:
-                    if self._terminated:
+                    if self._batch_released:
                         # The cleanup handler already put the message back in the queue.
                         # Nothing left to do.
                         return
@@ -381,7 +392,7 @@ class Worker(object):
                                          permanent_failure)
             else:
                 with self._work_lock:
-                    if self._terminated:
+                    if self._batch_released:
                         # The cleanup handler already put the message back in the queue.
                         # Nothing left to do.
                         return
