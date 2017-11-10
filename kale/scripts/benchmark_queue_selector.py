@@ -297,7 +297,7 @@ class PrintStatsThread(threading.Thread):
             try:
                 log.info('Queue %s: %d tasks finished.' % (
                     queue_name, finished_count_breakdown[queue_name]))
-            except:
+            except Exception:
                 continue
 
 
@@ -366,7 +366,7 @@ class Benchmark(object):
                     running_time = row[1].strip()
                     if queue_name and running_time:
                         tasks.append((queue_name, running_time))
-                except:
+                except Exception:
                     continue
         return tasks
 
