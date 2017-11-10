@@ -87,7 +87,6 @@ class WorkerTestCase(unittest.TestCase):
         worker_inst._cleanup_worker(signal.SIGABRT, None)
         release_batch.assert_called_once_with()
         sys_exit.assert_called_once_with(0)
-        assert worker_inst._terminated, '_terminated should be True'
         shutdown_handler.assert_called_once_with()
 
     def testCleanupWorkerSuspend(self):
@@ -100,7 +99,6 @@ class WorkerTestCase(unittest.TestCase):
         release_batch.return_value = (0, 0)
         worker_inst._cleanup_worker(signal.SIGTSTP, None)
         release_batch.assert_called_once_with()
-        assert not worker_inst._terminated, '_terminated should not be True'
         assert not sys_exit.called, 'System should not have exited.'
 
     def testReleaseBatchWithTimeToSpare(self):
@@ -525,3 +523,25 @@ class WorkerTestCase(unittest.TestCase):
         self.assertTrue(worker_inst._check_process_resources())
         self.assertFalse(mock_logger.called)
         self.assertFalse(sys_exit.called)
+
+    def testRemoveMessageOrExitSuccess(self):
+        """Test remove_message_or_exit method."""
+        sys_exit = self._create_patch('sys.exit')
+
+        worker_inst = worker.Worker()
+        worker_inst._incomplete_messages = [1, 2]
+        worker_inst.remove_message_or_exit(1)
+
+        self.assertEqual(worker_inst._incomplete_messages, [2])
+        sys_exit.assert_not_called()
+
+    def testRemoveMessageOrExitFailure(self):
+        """Test remove_message_or_exit method."""
+        sys_exit = self._create_patch('sys.exit')
+
+        worker_inst = worker.Worker()
+        worker_inst._incomplete_messages = [1, 2]
+        worker_inst.remove_message_or_exit(3)
+
+        self.assertEqual(worker_inst._incomplete_messages, [1, 2])
+        sys_exit.assert_called()
