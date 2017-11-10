@@ -353,17 +353,24 @@ class Worker(object):
                     self._permanent_failures.append(message)
 
                 self._failed_messages.append(message)
-                self._incomplete_messages.remove(message)
 
                 self._on_task_failed(message, time_remaining_sec, err,
                                      permanent_failure)
             else:
                 self._successful_messages.append(message)
-                self._incomplete_messages.remove(message)
                 self._on_task_succeeded(message, time_remaining_sec)
+            finally:
+                self.remove_message_or_exit(message)
 
             # Increment total messages counter.
             self._total_messages_processed += 1
+
+    def remove_message_or_exit(self, message):
+        try:
+            self._incomplete_messages.remove(message)
+        except ValueError:
+            # Cleanup happened due to the signal handler - make sure we exit immediately.
+            sys.exit(0)
 
     def run_task(self, message):
         """Run the task contained in the message.

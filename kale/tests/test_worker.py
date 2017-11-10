@@ -523,3 +523,25 @@ class WorkerTestCase(unittest.TestCase):
         self.assertTrue(worker_inst._check_process_resources())
         self.assertFalse(mock_logger.called)
         self.assertFalse(sys_exit.called)
+
+    def testRemoveMessageOrExitSuccess(self):
+        """Test remove_message_or_exit method."""
+        sys_exit = self._create_patch('sys.exit')
+
+        worker_inst = worker.Worker()
+        worker_inst._incomplete_messages = [1, 2]
+        worker_inst.remove_message_or_exit(1)
+
+        self.assertEqual(worker_inst._incomplete_messages, [2])
+        sys_exit.assert_not_called()
+
+    def testRemoveMessageOrExitFailure(self):
+        """Test remove_message_or_exit method."""
+        sys_exit = self._create_patch('sys.exit')
+
+        worker_inst = worker.Worker()
+        worker_inst._incomplete_messages = [1, 2]
+        worker_inst.remove_message_or_exit(3)
+
+        self.assertEqual(worker_inst._incomplete_messages, [1, 2])
+        sys_exit.assert_called()
