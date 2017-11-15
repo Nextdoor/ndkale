@@ -13,12 +13,15 @@ class MultiQueueInfo(queue_info.QueueInfoBase):
                 queue_info.TaskQueue(name='queue2', priority=50),
                 queue_info.TaskQueue(name='queue3', priority=1)]
 
+    def does_queue_need_work(self, queue):
+        return not self.is_queue_empty(queue)
+
     def is_queue_empty(self, queue):
         if queue.name == 'queue2':
             return False
         return True
 
-    def get_highest_priority_non_empty_queue(self):
+    def get_highest_priority_queue_that_needs_work(self):
         return self.get_queues()[0]
 
 
@@ -33,7 +36,7 @@ class NoQueueInfo(queue_info.QueueInfoBase):
 
 
 class MultiQueueNoPriorityInfo(MultiQueueInfo):
-    def get_highest_priority_non_empty_queue(self):
+    def get_highest_priority_queue_that_needs_work(self):
         return None
 
 

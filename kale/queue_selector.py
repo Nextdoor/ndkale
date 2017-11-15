@@ -105,7 +105,7 @@ class HighestPriorityFirst(SelectQueueBase):
     """
 
     def get_queue(self, *args, **kwargs):
-        queue = self.queue_info.get_highest_priority_non_empty_queue()
+        queue = self.queue_info.get_highest_priority_queue_that_needs_work()
         if queue:
             return queue
         queues = self.queue_info.get_queues()
@@ -121,7 +121,7 @@ class HighestPriorityLottery(Lottery):
     """
 
     def get_queue(self, *args, **kwargs):
-        queue = self.queue_info.get_highest_priority_non_empty_queue()
+        queue = self.queue_info.get_highest_priority_queue_that_needs_work()
         if queue:
             return queue
 
@@ -141,7 +141,7 @@ class LotteryLottery(Lottery):
 
         for i in range(retry_empty_queue_count):
             queue = self._run_lottery(self.queue_info.get_queues())
-            if not self.queue_info.is_queue_empty(queue):
+            if self.queue_info.does_queue_need_work(queue):
                 return queue
         return self._run_lottery(self.queue_info.get_queues())
 
@@ -162,7 +162,7 @@ class ReducedLottery(Lottery):
 
         while len(candidate_queues) > 0:
             queue = self._run_lottery(candidate_queues)
-            if not self.queue_info.is_queue_empty(queue):
+            if self.queue_info.does_queue_need_work(queue):
                 return queue
             else:
                 candidate_queues.remove(queue)

@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import tempfile
 import unittest
 import mock
+from boto import exception as boto_exception
 
 from kale import queue_info
 from kale import sqs
@@ -54,7 +55,7 @@ class QueueInfoTest(unittest.TestCase):
         self.assertEquals(queues[1].name, 'default')
         self.assertEquals(queues[2].name, 'lowp')
 
-    def test_queues(self):
+    def _build_queue_info(self):
         with mock.patch('boto.sqs') as mock_sqs:
             mock_sqs_connection = mock.MagicMock()
             mock_queue = mock.MagicMock()
@@ -76,6 +77,10 @@ class QueueInfoTest(unittest.TestCase):
             queue_info.QueueInfo._simple_name_queues_map = None
             qinfo = queue_info.QueueInfo(queue_config.name, sqs_inst,
                                          queue_info.TaskQueue)
+        return qinfo
+
+    def test_queues(self):
+            qinfo = self._build_queue_info()
             queues = qinfo.get_queues()
             self.assertEquals(len(queues), 3)
 
@@ -89,7 +94,28 @@ class QueueInfoTest(unittest.TestCase):
             queue_info_base.get_queues()
 
         with self.assertRaises(NotImplementedError):
-            queue_info_base.get_highest_priority_non_empty_queue()
+            queue_info_base.get_highest_priority_queue_that_needs_work()
 
         with self.assertRaises(NotImplementedError):
             queue_info_base.is_queue_empty(mock.MagicMock())
+
+        with self.assertRaises(NotImplementedError):
+            queue_info_base.does_queue_need_work(mock.MagicMock())
+
+    def test_does_queue_need_work_empty(self):
+        with mock.patch.object(queue_info.QueueInfo, 'is_queue_empty', return_value=True):
+            qinfo = self._build_queue_info()
+            self.assertFalse(qinfo.does_queue_need_work(None))
+
+    def test_does_queue_need_work_non_empty(self):
+        with mock.patch.object(queue_info.QueueInfo, 'is_queue_empty', return_value=False):
+            qinfo = self._build_queue_info()
+            self.assertTrue(qinfo.does_queue_need_work(None))
+
+    def test_does_queue_need_work_rate_limited(self):
+        rate_limit_exception = boto_exception.SQSError(None, None)
+        rate_limit_exception.code = 'RequestThrottled'
+        with mock.patch.object(
+                queue_info.QueueInfo, 'is_queue_empty', side_effect=rate_limit_exception):
+            qinfo = self._build_queue_info()
+            self.assertTrue(qinfo.does_queue_need_work(None))
