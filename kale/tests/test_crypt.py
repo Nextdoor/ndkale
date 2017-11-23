@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from Crypto.Cipher import AES
-
 from kale import crypt
-from kale import settings
-
 
 __author__ = 'Aaron Webber (aaron@nextdoor.com)'
 
@@ -13,17 +9,25 @@ __author__ = 'Aaron Webber (aaron@nextdoor.com)'
 class Crypt2Test(unittest.TestCase):
 
     def setUp(self):
-        self.TEST_MSGS = [b'12345',
-                          b'adasdfasdfasdfasdf',
-                          b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-                          b's',
-                          b'',
-                          b'1616161616161616',
-                          b'\x8A\x00\x34\xAF\xFF',
-                          (b'\xFF\xFE\xFA\xEE\x01\x34\xAB\xFF\xFE\xFA\xEE\x01\x34' +
-                           b'\xAB\xFF\xFE\xFA\xEE\x01\x34\xAB'),
-                          u'這是一個Unicode測試'.encode('utf-8'),
-                          b'\x00\x00\x00\x00\x00\x00\x00']
+        self.msgs_encrypt = [
+            ('12345', 'hU6aBS2mJgr0DUrUiHQouA=='),
+            ('adasdfasdfasdfasdf', 'Y/VR7vs4e2arRx8C6EBGxZanBnCrxVik3257tMlqomM='),
+            ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+             'C9pEG6g8ge76xt2q9XLbpwvaRBuoPIHu+sbdqvVy26ccNo37r4pWAD/7HiC77bI+'),
+            ('s', 'gPm/2E+m/YMX16Yxg81wqA=='),
+            ('', '1lcHEDp3HufBy14CHkSlVw=='),
+            ('1616161616161616', 'wqx+H/v7iFtW7acYb9QoQ9ZXBxA6dx7nwcteAh5EpVc='),
+            ('\x8a\x004\xaf\xff', 'cVz2i16U1c3ztu2GwMhtvg=='),
+            ('\xff\xfe\xfa\xee\x014\xab\xff\xfe\xfa\xee\x014\xab\xff\xfe\xfa\xee\x014\xab',
+             'I6XMloWUi3GQwjq5kP15Z3EI+LIV3Ygsda2FiSIgtM8='),
+            ('\xe9\x80\x99\xe6\x98\xaf\xe4\xb8\x80\xe5\x80\x8bUnicode\xe6\xb8\xac\xe8\xa9\xa6',
+             'XwjwdL+rHdD6pHr/eUckPJUC7jBbc0LUr8g7f7FffBI='),
+            ('\x00\x00\x00\x00\x00\x00\x00', '/b/++aGOO0Kj2e2+YWadsQ==')
+        ]
+
+    @property
+    def msgs(self):
+        return [x[0] for x in self.msgs_encrypt]
 
     def test_get_padding_bytes(self):
         padding_bytes = crypt._get_padding_bytes(3)
@@ -49,55 +53,55 @@ class Crypt2Test(unittest.TestCase):
 
     def test_pad(self):
         # This would probably be nicer with those nose test generators
-        [self._assert_padded_right(msg) for msg in self.TEST_MSGS]
+        [self._assert_padded_right(msg) for msg in self.msgs]
 
     def _assert_padded_right(self, test_msg):
         padded_msg = crypt._pad(test_msg)
         self.assertEqual(0, len(padded_msg) % crypt.BLOCK_SIZE)
 
     def test_unpad(self):
-        for msg in self.TEST_MSGS:
+        for msg in self.msgs:
             padded_msg = crypt._pad(msg)
             self.assertEqual(msg, crypt._unpad(padded_msg))
 
     def test_crypt(self):
-        for msg in self.TEST_MSGS:
+        for msg in self.msgs:
             self.assertNotEqual(msg, crypt.encrypt(msg))
 
     def test_decrypt(self):
-        for msg in self.TEST_MSGS:
+        for msg in self.msgs:
             crypted_msg = crypt.encrypt(msg)
             self.assertEqual(msg, crypt.decrypt(crypted_msg))
 
     def test_urlsafe_crypt(self):
-        [self.assertNotEqual(msg, crypt.urlsafe_encrypt(msg)) for msg in self.TEST_MSGS]
+        [self.assertNotEqual(msg, crypt.urlsafe_encrypt(msg)) for msg in self.msgs]
 
     def test_urlsafe_decrypt(self):
-        for msg in self.TEST_MSGS:
+        for msg in self.msgs:
             crypted_msg = crypt.urlsafe_encrypt(msg)
             self.assertEqual(msg, crypt.urlsafe_decrypt(crypted_msg))
 
     def test_hex_crypt(self):
-        [self.assertNotEqual(msg, crypt.hex_encrypt(msg)) for msg in self.TEST_MSGS]
+        [self.assertNotEqual(msg, crypt.hex_encrypt(msg)) for msg in self.msgs]
 
     def text_hex_decrypt(self):
-        for msg in self.TEST_MSGS:
+        for msg in self.msgs:
             crypted_msg = crypt.hex_encrypt(msg)
             self.assertEqual(msg, crypt.hex_decrypt(crypted_msg))
 
     def test_crypt_order_doesnt_matter(self):
-        # blockalgo.py has a concerning comment indicating that the cipher may be stateful,
-        # and that we shouldn't be re-using the cipher object. However, empirical data
-        # shows that re-using the cipher object does not cause any problems. This test
-        # verifies that whatever internal state the cipher object may maintain does
-        # not affect the cipher text.
-        crypted_msgs = {msg: crypt.encrypt(msg) for msg in self.TEST_MSGS}
+        # This is effectively a test that we are using ECB (or some other non-chained)
+        # mode of operation, because as long as we are it's fine to keep using the same
+        # cipher object over and over. If we switched to a chained mode, this test would
+        # break and we would need to create a new cipher object (and IV and/or nonce,
+        # depending on mode) for every message.
+        crypted_msgs = {msg: crypt.encrypt(msg) for msg in self.msgs}
         # Reset to a new cipher
-        crypt.cipher = AES.new(settings.UTIL_CRYPT_CIPHER)
-        self.TEST_MSGS.reverse()
-        crypted_in_reverse = {msg: crypt.encrypt(msg) for msg in self.TEST_MSGS}
+        crypt._set_cipher()
+        self.msgs.reverse()
+        crypted_in_reverse = {msg: crypt.encrypt(msg) for msg in self.msgs}
         [self.assertEqual(crypted_msgs[msg],
-                          crypted_in_reverse[msg]) for msg in self.TEST_MSGS]
+                          crypted_in_reverse[msg]) for msg in self.msgs]
 
     def test_bad_decryption_input(self):
         """Test that we get CryptException when we pass bad input to decrypt functions."""
@@ -125,3 +129,8 @@ class Crypt2Test(unittest.TestCase):
             for msg in bad_input:
                 with self.assertRaises(ValueError):
                     f(msg)
+
+    def test_backwards_compatible(self):
+        """Test that we still decrypt any existing messages correctly."""
+        for msg, encrypted in self.msgs_encrypt:
+            self.assertEqual(msg, crypt.decrypt(encrypted))

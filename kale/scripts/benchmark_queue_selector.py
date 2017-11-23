@@ -294,11 +294,8 @@ class PrintStatsThread(threading.Thread):
         log.info('Total processed tasks: %d / %d' % (
             total_processed_tasks, self.total_num_tasks))
         for queue_name in six.iterkeys(finished_count_breakdown):
-            try:
-                log.info('Queue %s: %d tasks finished.' % (
-                    queue_name, finished_count_breakdown[queue_name]))
-            except:
-                continue
+            log.info('Queue %s: %d tasks finished.' % (
+                queue_name, finished_count_breakdown[queue_name]))
 
 
 class Benchmark(object):
@@ -366,7 +363,7 @@ class Benchmark(object):
                     running_time = row[1].strip()
                     if queue_name and running_time:
                         tasks.append((queue_name, running_time))
-                except:
+                except IndexError:
                     continue
         return tasks
 
