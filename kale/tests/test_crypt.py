@@ -10,19 +10,19 @@ class Crypt2Test(unittest.TestCase):
 
     def setUp(self):
         self.msgs_encrypt = [
-            ('12345', 'hU6aBS2mJgr0DUrUiHQouA=='),
-            ('adasdfasdfasdfasdf', 'Y/VR7vs4e2arRx8C6EBGxZanBnCrxVik3257tMlqomM='),
-            ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            (b'12345', 'hU6aBS2mJgr0DUrUiHQouA=='),
+            (b'adasdfasdfasdfasdf', 'Y/VR7vs4e2arRx8C6EBGxZanBnCrxVik3257tMlqomM='),
+            (b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
              'C9pEG6g8ge76xt2q9XLbpwvaRBuoPIHu+sbdqvVy26ccNo37r4pWAD/7HiC77bI+'),
-            ('s', 'gPm/2E+m/YMX16Yxg81wqA=='),
-            ('', '1lcHEDp3HufBy14CHkSlVw=='),
-            ('1616161616161616', 'wqx+H/v7iFtW7acYb9QoQ9ZXBxA6dx7nwcteAh5EpVc='),
-            ('\x8a\x004\xaf\xff', 'cVz2i16U1c3ztu2GwMhtvg=='),
-            ('\xff\xfe\xfa\xee\x014\xab\xff\xfe\xfa\xee\x014\xab\xff\xfe\xfa\xee\x014\xab',
+            (b's', 'gPm/2E+m/YMX16Yxg81wqA=='),
+            (b'', '1lcHEDp3HufBy14CHkSlVw=='),
+            (b'1616161616161616', 'wqx+H/v7iFtW7acYb9QoQ9ZXBxA6dx7nwcteAh5EpVc='),
+            (b'\x8a\x004\xaf\xff', 'cVz2i16U1c3ztu2GwMhtvg=='),
+            (b'\xff\xfe\xfa\xee\x014\xab\xff\xfe\xfa\xee\x014\xab\xff\xfe\xfa\xee\x014\xab',
              'I6XMloWUi3GQwjq5kP15Z3EI+LIV3Ygsda2FiSIgtM8='),
-            ('\xe9\x80\x99\xe6\x98\xaf\xe4\xb8\x80\xe5\x80\x8bUnicode\xe6\xb8\xac\xe8\xa9\xa6',
+            (b'\xe9\x80\x99\xe6\x98\xaf\xe4\xb8\x80\xe5\x80\x8bUnicode\xe6\xb8\xac\xe8\xa9\xa6',
              'XwjwdL+rHdD6pHr/eUckPJUC7jBbc0LUr8g7f7FffBI='),
-            ('\x00\x00\x00\x00\x00\x00\x00', '/b/++aGOO0Kj2e2+YWadsQ==')
+            (b'\x00\x00\x00\x00\x00\x00\x00', '/b/++aGOO0Kj2e2+YWadsQ==')
         ]
 
     @property
