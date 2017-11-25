@@ -41,7 +41,7 @@ class WorkerThread(threading.Thread):
     def run(self):
         for i in range(self.iterations):
             start_time = time.time()
-            self.queue_info_obj.get_highest_priority_non_empty_queue()
+            self.queue_info_obj.get_highest_priority_queue_that_needs_work()
             end_time = time.time()
             checking_sqs_time.put(end_time - start_time)
 

@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import six
 import yaml
+from boto import exception as boto_exception
 
 
 class TaskQueue(object):
@@ -74,7 +75,7 @@ class QueueInfoBase(object):
         """Returns a list of TaskQueue objects."""
         raise NotImplementedError('Base class cannot be used directly.')
 
-    def get_highest_priority_non_empty_queue(self):
+    def get_highest_priority_queue_that_needs_work(self):
         """Returns the highest-priority non-empty queue."""
         raise NotImplementedError('Base class cannot be used directly.')
 
@@ -83,6 +84,15 @@ class QueueInfoBase(object):
 
         :param TaskQueue queue: A TaskQueue object.
         :return: True if the queue is empty; otherwise, queue is non-empty.
+        :rtype: bool
+        """
+        raise NotImplementedError('Base class cannot be used directly.')
+
+    def does_queue_need_work(self, queue):
+        """Checks if a queue should be worked on.
+
+        :param TaskQueue queue: a TaskQueue object.
+        :return: True if the queue needs work; False otherwise.
         :rtype: bool
         """
         raise NotImplementedError('Base class cannot be used directly.')
@@ -128,13 +138,13 @@ class QueueInfo(QueueInfoBase):
         """
         return self._queues
 
-    def get_highest_priority_non_empty_queue(self):
-        """Returns the highest-priority non-empty queue.
+    def get_highest_priority_queue_that_needs_work(self):
+        """Returns the highest-priority queue that needs work.
 
         If all queues are empty, then None is returned.
         """
         for queue in self._queues:
-            if not self.is_queue_empty(queue):
+            if self.does_queue_need_work(queue):
                 return queue
         return None
 
@@ -149,6 +159,23 @@ class QueueInfo(QueueInfoBase):
         if sqs_queue.count() > 0:
             return False
         return True
+
+    def does_queue_need_work(self, queue):
+        """Checks if a queue should be worked on.
+
+        This basically checks whether the queue is empty. However,
+        if we hit a SQS rate limit, this will assume the queue needs work.
+
+        :param TaskQueue queue: a TaskQueue object.
+        :return: True if the queue needs work; False otherwise.
+        :rtype: bool
+        """
+        try:
+            return not self.is_queue_empty(queue)
+        except boto_exception.SQSError as e:
+            if e.code == 'RequestThrottled':
+                return True
+            raise e
 
     @classmethod
     def _get_queues_from_config(cls, config_file, queue_cls):

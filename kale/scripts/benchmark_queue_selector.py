@@ -140,7 +140,7 @@ class StaticQueueInfo(queue_info.QueueInfoBase):
                 return False
         return True
 
-    def get_highest_priority_non_empty_queue(self):
+    def get_highest_priority_queue_that_needs_work(self):
         """Returns a list of non-empty queues."""
         non_empty_queues = []
         for (queue_name, queue) in six.iteritems(self.queues):
@@ -157,6 +157,10 @@ class StaticQueueInfo(queue_info.QueueInfoBase):
         if not the_queue.tasks.empty():
             return False
         return True
+
+    def does_queue_need_work(self, queue):
+        """Checks if a queue should be worked on."""
+        return not self.is_queue_empty(queue)
 
 
 class WorkerThread(threading.Thread):
