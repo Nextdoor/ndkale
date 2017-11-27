@@ -34,10 +34,16 @@ log = logging.getLogger(__name__)
 # Set up our Crypto hashing object
 BLOCK_SIZE = 16
 
+
+def _set_cipher():
+    global cipher
+    cipher = AES.new(builtins.bytes(settings.UTIL_CRYPT_CIPHER, 'ascii'), AES.MODE_ECB)
+
+
 # Get our cipher key from the settings file
 cipher = None
 if settings.UTIL_CRYPT_CIPHER:
-    cipher = AES.new(settings.UTIL_CRYPT_CIPHER)
+    _set_cipher()
 
 
 class CryptException(Exception):
