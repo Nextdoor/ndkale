@@ -486,14 +486,39 @@ class WorkerTestCase(unittest.TestCase):
 
     def testCheckProcessExceedingMemory(self):
         """Test process resources method."""
-        mock_resource = self._create_patch('resource.getrusage')
         sys_exit = self._create_patch('sys.exit')
-        self._create_patch('kale.consumer.Consumer')
+        mock_resource = self._create_patch('resource.getrusage')
+        mock_release = self._create_patch(
+            'kale.consumer.Consumer.release_messages')
+        mock_delete = self._create_patch(
+            'kale.consumer.Consumer.delete_messages')
+        mock_publish_dlq = self._create_patch(
+            'kale.publisher.Publisher.publish_messages_to_dead_letter_queue')
+        get_time = self._create_patch('time.time')
 
         worker_inst = worker.Worker()
+        queue = test_utils.TestQueueClass(name='test_queue')
+        worker_inst._batch_queue = queue
+        failed_msg = test_utils.new_mock_message()
+        worker_inst._failed_messages = [failed_msg]
+        success_msg = test_utils.new_mock_message()
+        worker_inst._successful_messages = [success_msg]
+        incl_msg = test_utils.new_mock_message()
+        worker_inst._incomplete_messages = [incl_msg]
+        perm_failed_msg = test_utils.new_mock_message()
+        worker_inst._permanent_failures = [perm_failed_msg]
+        worker_inst._batch_stop_time = 20
+        # _batch_stop_time - get_time > RESET_TIMEOUT_THRESHOLD (20 - 10 > 1)
+        get_time.return_value = 10
+
         mock_resource.return_value = mock.MagicMock(ru_maxrss=1000000000)
 
         worker_inst._check_process_resources()
+
+        deleted_msgs = [success_msg, failed_msg]
+        mock_delete.assert_called_once_with(deleted_msgs, queue.name)
+        mock_release.assert_called_once_with([incl_msg], queue.name)
+        mock_publish_dlq.assert_called_once_with(queue.dlq_name, [perm_failed_msg])
         sys_exit.assert_called_once_with(1)
 
     def testCheckProcessDirty(self):
