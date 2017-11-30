@@ -209,6 +209,8 @@ class Worker(object):
         # shutting down the worker.
         settings.ON_WORKER_SHUTDOWN()
 
+        self._release_batch()
+
         self._on_exceeding_memory_limit(resource_data.ru_maxrss)
 
         # Use non-zero exit code.
