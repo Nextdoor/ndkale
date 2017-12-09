@@ -114,7 +114,7 @@ class Worker(object):
 
         :param list[KaleMessage] messages: a list of task messages to process.
         """
-        logger.info('Start processing %d tasks in a batch in queue %s ...' % (
+        logger.debug('Start processing %d tasks in a batch in queue %s ...' % (
             len(messages), self._batch_queue.name))
 
     def _on_post_batch_run(self, num_completed, num_incomplete, messages):
@@ -124,7 +124,7 @@ class Worker(object):
         :param int num_incomplete: the number of tasks incomplete in the batch.
         :param list[KaleMessage] messages: a list of messages in this batch.
         """
-        logger.info(('Finish processing message batch. Completed tasks: %d;'
+        logger.debug(('Finish processing message batch. Completed tasks: %d;'
                      ' Incomplete: %d') % (
             num_completed, num_incomplete))
 
@@ -169,7 +169,7 @@ class Worker(object):
             budget of running this batch of tasks.
         """
         task = message.task_inst
-        logger.info(('Task succeeded. Task id: %s; Queue: %s; '
+        logger.debug(('Task succeeded. Task id: %s; Queue: %s; '
                      'Time remaining: %d sec') % (
             task.task_id, self._batch_queue.name, time_remaining_sec))
 
