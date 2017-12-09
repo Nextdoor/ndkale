@@ -202,7 +202,7 @@ class Worker(object):
 
             if self._dirty:
                 # We only log when the worker has been infected by  tasks.
-                logger.info('Worker process data.')
+                logger.debug('Worker process data.')
             return True
 
         # Allow the client of this library to do any setup before
