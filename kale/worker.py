@@ -157,7 +157,7 @@ class Worker(object):
         :param bool permanent_failure: whether this task permanently fails.
         """
         task = message.task_inst
-        logger.info(('Task failed. Task id: %s; Queue: %s; '
+        logger.debug(('Task failed. Task id: %s; Queue: %s; '
                      'Time remaining: %d sec') % (
             task.task_id, self._batch_queue.name, time_remaining_sec))
 
