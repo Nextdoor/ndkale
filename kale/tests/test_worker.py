@@ -321,7 +321,6 @@ class WorkerTestCase(unittest.TestCase):
         """Test a successful batch."""
         mock_consumer = self._create_patch('kale.consumer.Consumer')
         get_time = self._create_patch('time.time')
-        log_info = self._create_patch('kale.worker.logger.info')
 
         worker_inst = worker.Worker()
         worker_inst._batch_queue = worker_inst._queue_selector.get_queue()
@@ -341,16 +340,11 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(num_messages, len(worker_inst._successful_messages))
         self.assertEqual(0, len(worker_inst._failed_messages))
         self.assertEqual(0, len(worker_inst._permanent_failures))
-        self.assertEqual(
-            ('Task succeeded. Task id: mock_task; Queue: %s; '
-             'Time remaining: 90 sec') % worker_inst._batch_queue.name,
-            log_info.call_args[0][0])
 
     def testRunBatchNoTimeRemaining(self):
         """Test a batch where there is not enough time remaining."""
         mock_consumer = self._create_patch('kale.consumer.Consumer')
         get_time = self._create_patch('time.time')
-        log_info = self._create_patch('kale.worker.logger.info')
 
         worker_inst = worker.Worker()
         worker_inst._batch_queue = worker_inst._queue_selector.get_queue()
@@ -370,10 +364,6 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(0, len(worker_inst._successful_messages))
         self.assertEqual(0, len(worker_inst._failed_messages))
         self.assertEqual(0, len(worker_inst._permanent_failures))
-        self.assertEqual(
-            ('Task deferred. Task id: mock_task; Queue: %s; '
-             'Time remaining: 40 sec') % worker_inst._batch_queue.name,
-            log_info.call_args[0][0])
 
     def testRunBatchTaskTimeout(self):
         """Test batch with a task timeout."""
@@ -382,7 +372,6 @@ class WorkerTestCase(unittest.TestCase):
         mock_failure = self._create_patch(
             'kale.test_utils.TimeoutTask.handle_failure')
         mock_failure.return_value = True
-        log_info = self._create_patch('kale.worker.logger.info')
 
         worker_inst = worker.Worker()
         worker_inst._batch_queue = worker_inst._queue_selector.get_queue()
@@ -407,10 +396,6 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(0, len(worker_inst._successful_messages))
         self.assertEqual(0, len(worker_inst._permanent_failures))
         self.assertEqual(num_messages, len(worker_inst._failed_messages))
-        self.assertEqual(
-            ('Task failed. Task id: fail_task; Queue: %s; '
-             'Time remaining: 90 sec') % worker_inst._batch_queue.name,
-            log_info.call_args[0][0])
 
     def testRunBatchTaskException(self):
         """Test batch with a task exception."""
@@ -419,7 +404,6 @@ class WorkerTestCase(unittest.TestCase):
         mock_failure = self._create_patch(
             'kale.test_utils.FailTask.handle_failure')
         mock_failure.return_value = True
-        log_info = self._create_patch('kale.worker.logger.info')
 
         worker_inst = worker.Worker()
         worker_inst._batch_queue = worker_inst._queue_selector.get_queue()
@@ -443,10 +427,6 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(0, len(worker_inst._successful_messages))
         self.assertEqual(0, len(worker_inst._permanent_failures))
         self.assertEqual(num_messages, len(worker_inst._failed_messages))
-        self.assertEqual(
-            ('Task failed. Task id: fail_task; Queue: %s; '
-             'Time remaining: 90 sec') % worker_inst._batch_queue.name,
-            log_info.call_args[0][0])
 
     def testRunBatchTaskExceptionPermanentFailure(self):
         """Test batch with a task exception."""
@@ -455,7 +435,6 @@ class WorkerTestCase(unittest.TestCase):
         mock_failure = self._create_patch(
             'kale.test_utils.FailTask.handle_failure')
         mock_failure.return_value = False
-        log_info = self._create_patch('kale.worker.logger.info')
 
         worker_inst = worker.Worker()
         worker_inst._batch_queue = worker_inst._queue_selector.get_queue()
@@ -479,10 +458,6 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(0, len(worker_inst._successful_messages))
         self.assertEqual(1, len(worker_inst._permanent_failures))
         self.assertEqual(num_messages, len(worker_inst._failed_messages))
-        self.assertEqual(
-            ('Task failed. Task id: fail_task; Queue: %s; '
-             'Time remaining: 90 sec') % worker_inst._batch_queue.name,
-            log_info.call_args[0][0])
 
     def testCheckProcessExceedingMemory(self):
         """Test process resources method."""
