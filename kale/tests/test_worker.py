@@ -473,7 +473,6 @@ class WorkerTestCase(unittest.TestCase):
 
     def testCheckProcessDirty(self):
         """Test process resources method."""
-        mock_logger = self._create_patch('kale.worker.logger.info')
         mock_resource = self._create_patch('resource.getrusage')
         mock_resource.return_value = mock.MagicMock(ru_maxrss=10)
         sys_exit = self._create_patch('sys.exit')
@@ -482,7 +481,6 @@ class WorkerTestCase(unittest.TestCase):
         worker_inst._dirty = True
 
         self.assertTrue(worker_inst._check_process_resources())
-        self.assertTrue(mock_logger.called)
         self.assertFalse(sys_exit.called)
 
     def testCheckProcessNotDirty(self):
