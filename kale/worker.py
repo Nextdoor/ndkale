@@ -5,10 +5,11 @@ It's an infinite loop.
 from __future__ import absolute_import
 
 import logging
-import resource
 import signal
 import sys
 import time
+
+from six.moves import range
 
 from kale import consumer
 from kale import publisher
@@ -16,7 +17,6 @@ from kale import queue_info
 from kale import settings
 from kale import timeout
 from kale import utils
-from six.moves import range
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +82,13 @@ class Worker(object):
         """Callback function right at the beginning of starting the worker. """
         logger.info('Starting run loop for task worker.')
 
-    def _on_exceeding_memory_limit(self, ru_maxrss):
+    def _on_exceeding_memory_limit(self, ru_maxrss_mb):
         """Callback function when the process exceeds memory limit.
 
-        :param int ru_maxrss: maximum resident set size used (in kilobytes).
+        :param int ru_maxrss_mb: maximum resident set size used (in MB).
         """
-        logger.info('Memory usages exceeds max: %d. Exiting.' % ru_maxrss)
+        logger.info('Memory usage of %d MB exceeds max of %s MB. Exiting.' % (
+            ru_maxrss_mb, settings.DIE_ON_RESIDENT_SET_SIZE_MB))
 
     def _on_sigtstp(self, num_completed, num_incomplete):
         """Callback function when SIGTSTP is triggered.
@@ -195,10 +196,9 @@ class Worker(object):
         :return: True if still operational, otherwise it will exit the process.
         :rtype: bool
         """
-        resource_data = resource.getrusage(resource.RUSAGE_SELF)
+        ru_maxrss_mb = utils.ru_maxrss_mb()
 
-        if resource_data.ru_maxrss < (
-                settings.DIE_ON_RESIDENT_SET_SIZE_MB * 1024):
+        if ru_maxrss_mb < settings.DIE_ON_RESIDENT_SET_SIZE_MB:
 
             if self._dirty:
                 # We only log when the worker has been infected by  tasks.
@@ -209,7 +209,7 @@ class Worker(object):
         # shutting down the worker.
         settings.ON_WORKER_SHUTDOWN()
 
-        self._on_exceeding_memory_limit(resource_data.ru_maxrss)
+        self._on_exceeding_memory_limit(ru_maxrss_mb)
 
         # Use non-zero exit code.
         sys.exit(1)
