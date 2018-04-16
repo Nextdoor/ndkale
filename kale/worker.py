@@ -330,40 +330,50 @@ class Worker(object):
 
         # Set visibility timeout start time.
         for message in message_batch:
-            task_inst = message.task_inst
             time_remaining_sec = self._batch_stop_time - time.time()
 
-            if task_inst.time_limit >= time_remaining_sec:
+            if message.task_inst.time_limit >= time_remaining_sec:
                 # Greedily continue to process tasks, this task
                 # is already in the incomplete_messages list
                 self._on_task_deferred(message, time_remaining_sec)
                 continue
 
             # Add cleanup method when tasks are timed out?
-            try:
-                with timeout.time_limit(task_inst.time_limit):
-                    self.run_task(message)
-            except Exception as err:
-                # Re-publish failed tasks.
-                # As an optimization we could run all of the failures from a
-                # batch together.
-                permanent_failure = not task_inst.__class__.handle_failure(
-                    message, err)
-                if permanent_failure and settings.USE_DEAD_LETTER_QUEUE:
-                    self._permanent_failures.append(message)
 
-                self._failed_messages.append(message)
+            self._run_single_message(message, time_remaining_sec)
 
-                self._on_task_failed(message, time_remaining_sec, err,
-                                     permanent_failure)
-            else:
-                self._successful_messages.append(message)
-                self._on_task_succeeded(message, time_remaining_sec)
-            finally:
-                self.remove_message_or_exit(message)
+    def _run_single_message(self, message, time_remaining_sec):
+        """Call run_task on a single message and handle failures.
 
-            # Increment total messages counter.
-            self._total_messages_processed += 1
+        This method handles time limiting, and calls subsequent commands if the task succeeds/fails
+
+        :param message: KaleMessage
+        :param time_remaining_sec: int seconds left for the batch of messages. Used mainly for logs
+        """
+        task_inst = message.task_inst
+        try:
+            with timeout.time_limit(task_inst.time_limit):
+                self.run_task(message)
+        except Exception as err:
+            # Re-publish failed tasks.
+            # As an optimization we could run all of the failures from a
+            # batch together.
+            permanent_failure = not task_inst.__class__.handle_failure(
+                message, err)
+            if permanent_failure and settings.USE_DEAD_LETTER_QUEUE:
+                self._permanent_failures.append(message)
+
+            self._failed_messages.append(message)
+
+            self._on_task_failed(message, time_remaining_sec, err,
+                                 permanent_failure)
+        else:
+            self._successful_messages.append(message)
+            self._on_task_succeeded(message, time_remaining_sec)
+        finally:
+            self.remove_message_or_exit(message)
+        # Increment total messages counter.
+        self._total_messages_processed += 1
 
     def remove_message_or_exit(self, message):
         try:
