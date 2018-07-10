@@ -2,9 +2,12 @@
 from __future__ import absolute_import
 
 import os
+import pickle
 import platform
 import time
 import zlib
+
+import six
 
 # The default settings are inadequate for actual use
 # due to the need for a queue. When the settings are
@@ -59,3 +62,10 @@ DIE_ON_RESIDENT_SET_SIZE_MB = 256
 
 # CIPHER used by kale.crypt, must be 16-, 24-, or 36-byte string
 UTIL_CRYPT_CIPHER = '1234567890123456'
+
+# If Python 2 & Python 3 need to co-exist, set PICKLE_PROTOCOL=2
+# Otherwise, this is protocol on Py2/Py3
+if six.PY2:
+    PICKLE_PROTOCOL = 0
+else:
+    PICKLE_PROTOCOL = pickle.DEFAULT_PROTOCOL
