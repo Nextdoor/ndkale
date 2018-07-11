@@ -63,8 +63,10 @@ DIE_ON_RESIDENT_SET_SIZE_MB = 256
 # CIPHER used by kale.crypt, must be 16-, 24-, or 36-byte string
 UTIL_CRYPT_CIPHER = '1234567890123456'
 
-# If Python 2 & Python 3 need to co-exist, set PICKLE_PROTOCOL=2
-# Otherwise, this is protocol on Py2/Py3
+# Manually specify pickle protocol used for writing Pickle files
+# Py2/Py3 have different default protocols. Reproduce those defaults
+# here for backwards compatibility.
+# Note: If Python 2 & Python 3 need to co-exist, override PICKLE_PROTOCOL=2
 if six.PY2:
     PICKLE_PROTOCOL = 0
 else:
