@@ -95,7 +95,7 @@ class KaleMessage(message.RawMessage):
         :rtype: str
         """
 
-        compressed_msg = _compressor(pickle.dumps(msg))
+        compressed_msg = _compressor(pickle.dumps(msg, protocol=settings.PICKLE_PROTOCOL))
         compressed_msg = crypt.encrypt(compressed_msg)
         # Check compressed task size.
         if len(compressed_msg) >= _task_size_limit:
