@@ -59,3 +59,5 @@ DIE_ON_RESIDENT_SET_SIZE_MB = 256
 
 # CIPHER used by kale.crypt, must be 16-, 24-, or 36-byte string
 UTIL_CRYPT_CIPHER = '1234567890123456'
+
+# Do not merge this
