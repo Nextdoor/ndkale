@@ -220,7 +220,7 @@ class Worker(object):
         This will handle releasing tasks in flight and deleting tasks that have
         been completed.
         """
-        logger.info('Process sent signal %d. Cleaning up tasks...' % signum)
+        logger.warning('Process sent signal %d. Cleaning up tasks...' % signum)
 
         num_completed, num_incomplete = self._release_batch()
 
