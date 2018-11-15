@@ -42,8 +42,11 @@ class SQSTalk(object):
             if settings.MESSAGE_QUEUE_USE_PROXY:
                 # Used only in Dev environment which uses ElasticMQ instead of
                 # SQS. Hence it uses a different boto api to connect to a proxy
-                region = boto.sqs.regioninfo.RegionInfo(name='elasticmq', endpoint=settings.MESSAGE_QUEUE_PROXY_PORT)
-                self._connections[conn_str] = boto.connect_sqs(aws_access_key_id=aws_access_key_id,
+                region = boto.sqs.regioninfo.RegionInfo(
+                    name='proxy',
+                    endpoint=settings.MESSAGE_QUEUE_PROXY_HOST)
+                self._connections[conn_str] = boto.connect_sqs(
+                    aws_access_key_id=aws_access_key_id,
                     aws_secret_access_key=aws_secret_access_key,
                     region=region,
                     is_secure=False,
