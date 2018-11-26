@@ -65,7 +65,7 @@ class Settings(object):
 
         try:
             settings_module_path = os.environ[ENVIRONMENT_VARIABLE]
-        except KeyError as e:
+        except KeyError:
             # NOTE: This is arguably an EnvironmentError, but that causes
             # problems with Python's interactive help.
             logger.error(
