@@ -301,7 +301,7 @@ class Worker(object):
                                             self._batch_queue.name)
 
         # Send permanently failed tasks to the dead-letter-queue.
-        if self._permanent_failures:
+        if self._permanent_failures and settings.ENABLE_DEAD_LETTER_QUEUE:
             self._publisher.publish_messages_to_dead_letter_queue(
                 self._batch_queue.dlq_name, self._permanent_failures)
             self._on_permanent_failure_batch()
