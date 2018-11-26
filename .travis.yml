@@ -21,7 +21,7 @@ deploy:
   - provider: pypi
     user: nextdoor
     password:
-      secure: "PASS"
+      secure: "n7GczuIQKUzBnRtO6qki3UgWgR4f0J32IrYNqb1WQR3qoBusY1CYunXNvKPTU6AVM5wP98JhQTXaDfFUUWGUGcpQWPZDbrqjszw/plL7kUggjcm2KbD+b9n7cfRzlBlTvrdFq6jO0X6zrm/HYbjr1viJEz65JDsNUfPVfLryJ+U="
     on:
       tags: true
       all_branches: true
