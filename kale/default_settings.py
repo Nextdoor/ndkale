@@ -63,6 +63,8 @@ DIE_ON_RESIDENT_SET_SIZE_MB = 256
 # CIPHER used by kale.crypt, must be 16-, 24-, or 36-byte string
 UTIL_CRYPT_CIPHER = '1234567890123456'
 
+ENABLE_DEAD_LETTER_QUEUE = True
+
 # Manually specify pickle protocol used for writing Pickle files
 # Py2/Py3 have different default protocols. Reproduce those defaults
 # here for backwards compatibility.

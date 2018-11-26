@@ -32,5 +32,3 @@ SQS_TASK_SIZE_LIMIT = 256000
 
 # The class for queue selction algorithm
 QUEUE_SELECTOR = 'kale.queue_selector.ReducedLottery'
-
-ENABLE_DEAD_LETTER_QUEUE = True
