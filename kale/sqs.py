@@ -5,6 +5,7 @@ import logging
 
 import boto.sqs
 import boto.sqs.connection
+import boto.sqs.regioninfo
 
 from kale import exceptions
 from kale import message
@@ -41,12 +42,15 @@ class SQSTalk(object):
             if settings.MESSAGE_QUEUE_USE_PROXY:
                 # Used only in Dev environment which uses ElasticMQ instead of
                 # SQS. Hence it uses a different boto api to connect to a proxy
-                conn = boto.sqs.connection
-                self._connections[conn_str] = conn.SQSConnection(
-                    proxy_port=settings.MESSAGE_QUEUE_PROXY_PORT,
-                    proxy=settings.MESSAGE_QUEUE_PROXY_HOST, is_secure=False,
+                region = boto.sqs.regioninfo.RegionInfo(
+                    name='proxy',
+                    endpoint=settings.MESSAGE_QUEUE_PROXY_HOST)
+                self._connections[conn_str] = boto.connect_sqs(
                     aws_access_key_id=aws_access_key_id,
-                    aws_secret_access_key=aws_secret_access_key)
+                    aws_secret_access_key=aws_secret_access_key,
+                    region=region,
+                    is_secure=False,
+                    port=settings.MESSAGE_QUEUE_PROXY_PORT)
             else:
                 # Used in staging and production
                 self._connections[conn_str] = boto.sqs.connect_to_region(
