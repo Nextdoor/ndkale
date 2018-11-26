@@ -1,8 +1,15 @@
 language: python
+dist: xenial
 
 python:
   - "2.7"
   - "3.5"
+  - "3.6"
+  - "3.7"
+
+before_install:
+  # TravisCI has a global boto config that looks for a GCP plugin that we are not installing.
+  - export BOTO_CONFIG=/dev/null
 
 install:
   - pip install pycryptodome==3.6.1
@@ -14,3 +21,14 @@ before_script:
 
 script:
   - python setup.py test
+
+deploy:
+  - provider: pypi
+    user: nextdoor
+    password:
+      secure: "n7GczuIQKUzBnRtO6qki3UgWgR4f0J32IrYNqb1WQR3qoBusY1CYunXNvKPTU6AVM5wP98JhQTXaDfFUUWGUGcpQWPZDbrqjszw/plL7kUggjcm2KbD+b9n7cfRzlBlTvrdFq6jO0X6zrm/HYbjr1viJEz65JDsNUfPVfLryJ+U="
+    on:
+      tags: true
+      all_branches: true
+      condition: $TRAVIS_TAG =~ ^v[0-9]+.[0-9]+.[0-9]+[a-z]?$
+    distributions: "sdist bdist_wheel"
