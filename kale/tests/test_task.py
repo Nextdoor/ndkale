@@ -85,7 +85,7 @@ class TaskFailureTestCase(unittest.TestCase):
         random_kwarg = 100
         payload = {
             'args': (random_arg,),
-            'kwargs': {'random_kwarg': random_kwarg},
+            'kwargs': {'random_kwarg': random_kwarg, 'delay_sec': delay_sec},
             'app_data': {}}
         with mock.patch(
                 'kale.publisher.Publisher.publish') as publish_func:

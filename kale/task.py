@@ -89,8 +89,9 @@ class Task(object):
         return '%s_uuid_%s' % (cls.__name__, uuid.uuid1())
 
     @classmethod
-    def publish(cls, app_data, *args, delay_sec=None, **kwargs):
+    def publish(cls, app_data, *args, **kwargs):
         """Class method to publish a task given instance specific arguments."""
+        delay_sec = kwargs.get('delay_sec')
         task_id = cls._get_task_id(*args, **kwargs)
         payload = {
             'args': args,
