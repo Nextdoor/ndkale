@@ -80,12 +80,12 @@ class QueueInfoTest(unittest.TestCase):
         return qinfo
 
     def test_queues(self):
-            qinfo = self._build_queue_info()
-            queues = qinfo.get_queues()
-            self.assertEquals(len(queues), 3)
+        qinfo = self._build_queue_info()
+        queues = qinfo.get_queues()
+        self.assertEquals(len(queues), 3)
 
-            # TODO (wenbin): add a separate test case for
-            # get_highest_priority_non_empty_queue.
+        # TODO (wenbin): add a separate test case for
+        # get_highest_priority_non_empty_queue.
 
     def test_not_implemented_ops(self):
         queue_info_base = queue_info.QueueInfoBase()
