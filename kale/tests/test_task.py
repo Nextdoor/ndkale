@@ -78,6 +78,23 @@ class TaskFailureTestCase(unittest.TestCase):
             fail_func.assert_called_once_with(
                 message, exc, task.PERMANENT_FAILURE_UNRECOVERABLE, True)
 
+    def testDelayedPublish(self):
+        task_inst = test_utils.new_mock_task(task_class=test_utils.MockTask)
+        delay_sec = 60
+        random_arg = 99
+        random_kwarg = 100
+        payload = {
+            'args': (random_arg,),
+            'kwargs': {'random_kwarg': random_kwarg},
+            'app_data': {}}
+        with mock.patch(
+                'kale.publisher.Publisher.publish') as publish_func:
+            task_inst.publish({}, random_arg, delay_sec=delay_sec, random_kwarg=random_kwarg)
+            message = test_utils.MockMessage(task_inst)
+
+            publish_func.assert_called_once_with(test_utils.MockTask, message.task_id, payload,
+                                                 delay_sec=delay_sec)
+
     def testTaskNoRetries(self):
         """Task task failing with retries disabled."""
 
