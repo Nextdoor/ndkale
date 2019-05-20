@@ -189,7 +189,7 @@ class QueueInfo(QueueInfoBase):
         :rtype: list[TaskQueue]
         """
         with open(config_file, 'r') as fp:
-            queues_from_config = yaml.load(fp)
+            queues_from_config = yaml.safe_load(fp)
             queues = []
             for queue_name, queue in six.iteritems(queues_from_config):
                 q = queue_cls(name=queue['name'], priority=queue['priority'],
