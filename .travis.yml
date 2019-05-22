@@ -16,7 +16,6 @@ before_script:
 script:
 - python setup.py test
 deploy:
-  matrix:
   - provider: pypi
     user: nextdoor
     password:
@@ -26,5 +25,3 @@ deploy:
       all_branches: true
       condition: "$TRAVIS_TAG =~ ^version-[0-9]+.[0-9]+.[0-9]+[a-z]?$"
     distributions: sdist bdist_wheel
-  password:
-    secure: aO70sId8yiGYpr/+ZOL4r4fW5tBfpHyRmKDty0zc7uBJT4Aym8NBnMysh/rdfNoPy/PR8B+sYQ4/3RNljmYRM5+jfaXcbLjraS299FI8A0Olr7hAKevEFzmWBDTeUqjq60tR+XCG63MUpHhZE1q90GUESTLeuQRkM3dgYbLEcP4=
