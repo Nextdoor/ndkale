@@ -8,6 +8,7 @@ import unittest
 from kale import exceptions
 from kale import test_utils
 from kale import worker
+
 from six.moves import range
 
 

@@ -8,10 +8,10 @@ implementations and use the right implementation in different cases.
 """
 from __future__ import absolute_import
 
+import botocore.exceptions
+
 import six
 import yaml
-from boto import exception as boto_exception
-
 
 class TaskQueue(object):
     """Represents a task queue. Always created via QueueInfo.
@@ -156,7 +156,13 @@ class QueueInfo(QueueInfoBase):
         :rtype: bool
         """
         sqs_queue = self._sqs_talk._get_or_create_queue(queue.name)
-        if sqs_queue.count() > 0:
+
+        # Call load to get updated attributes. Note this makes a
+        # network call.
+        sqs_queue.load()
+
+        count_str = sqs_queue.attributes.get('ApproximateNumberOfMessages')
+        if int(count_str) > 0:
             return False
         return True
 
@@ -172,8 +178,8 @@ class QueueInfo(QueueInfoBase):
         """
         try:
             return not self.is_queue_empty(queue)
-        except boto_exception.SQSError as e:
-            if e.code == 'RequestThrottled':
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == 'ThrottlingException':
                 return True
             raise e
 

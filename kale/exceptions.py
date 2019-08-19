@@ -30,3 +30,25 @@ class InvalidTaskDelayException(TaskException):
 
 class BlacklistedException(TaskException):
     """Exception raised when a task has been blacklisted."""
+
+
+class QueueException(Exception):
+    """Base class for queue exceptions."""
+
+
+class SendMessagesException(QueueException):
+    """Exception raised when a queue returns a non-zero number
+    of failures on send.
+    """
+
+
+class DeleteMessagesException(QueueException):
+    """Exception raised when a queue returns a non-zero number
+    of failures on delete.
+    """
+
+
+class ChangeMessagesVisibilityException(QueueException):
+    """Exception raised when a queue returns a non-zero number
+    of failures on change message visibility.
+    """

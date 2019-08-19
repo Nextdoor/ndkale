@@ -1,7 +1,13 @@
 """Module containing task consumption functionality."""
 from __future__ import absolute_import
 
+import logging
+
 from kale import sqs
+from kale import exceptions
+from kale.message import KaleMessage
+
+logger = logging.getLogger(__name__)
 
 
 class Consumer(sqs.SQSTalk):
@@ -18,41 +24,95 @@ class Consumer(sqs.SQSTalk):
         :returns: a list of KaleMessage objects, or None if not message found.
         :rtype: list[KaleMessage]
         """
-        queue = self._get_or_create_queue(queue_name)
-        extra_options = {}
-        if long_poll_time_sec:
-            extra_options['wait_time_seconds'] = long_poll_time_sec
-        messages = queue.get_messages(
-            num_messages=batch_size,
-            visibility_timeout=visibility_timeout_sec,
-            **extra_options)
-        if messages:
-            # Call get_body on all of the messages to decrypt and instantiate
-            # each task, this allows us to track each task's dequeue time.
-            [message.get_body() for message in messages]
-            return messages
-        else:
+        sqs_queue = self._get_or_create_queue(queue_name)
+
+        sqs_messages = sqs_queue.receive_messages(
+            MaxNumberOfMessages=batch_size,
+            VisibilityTimeout=visibility_timeout_sec,
+            WaitTimeSeconds=long_poll_time_sec or 1
+        )
+
+        if sqs_messages is None:
             return None
+
+        kale_messages = []
+        for sqs_message in sqs_messages:
+            kale_message = KaleMessage.decode(sqs_message.body)
+            kale_message.sqs_queue_name = queue_name
+            kale_message.sqs_message_id = sqs_message.message_id
+            kale_message.sqs_receipt_handle = sqs_message.receipt_handle
+
+            kale_messages.append(kale_message)
+
+        return kale_messages
 
     def delete_messages(self, messages, queue_name):
         """Remove messages from the queue.
 
         :param list[KaleMessage] messages: messages to delete.
         :param str queue_name: queue name.
+        :raises: DeleteMessagesException: SQS responded with a partial success. Some
+        messages were not deleted.
         """
         if not messages:
             return
         queue = self._get_or_create_queue(queue_name)
-        self._connection.delete_message_batch(queue, messages)
+
+        entries = []
+        for message in messages:
+            entries.append({
+                'Id': message.sqs_message_id,
+                'ReceiptHandle': message.sqs_receipt_handle
+            })
+
+        response = queue.delete_messages(
+            Entries=entries
+        )
+
+        failures = response.get('Failed', [])
+        for failure in failures:
+            logger.warning('delete of %s failed with code %s due to %s'.format(
+                failure['Id'],
+                failure['Code'],
+                failure['Message']
+            ))
+
+        if len(failures) > 0:
+            raise exceptions.DeleteMessagesException('%d messages failed to be deleted from SQS'.format(len(failures)))
 
     def release_messages(self, messages, queue_name):
         """Releases messages to SQS queues so other workers can pick them up.
 
         :param list[KaleMessage] messages: messages to release to SQS.
         :param str queue_name: queue name.
+        :raises: ChangeMessagesVisibilityException: SQS responded with a partial success. Some
+        messages were not released.
         """
         if not messages:
             return
+
         queue = self._get_or_create_queue(queue_name)
-        message_tups = [(msg, 0) for msg in messages]
-        self._connection.change_message_visibility_batch(queue, message_tups)
+
+        entries = []
+        for message in messages:
+            entries.append({
+                'Id': message.sqs_message_id,
+                'ReceiptHandle': message.sqs_receipt_handle,
+                'VisibilityTimeout': 0
+            })
+
+        response = queue.change_message_visibility_batch(
+            Entries=entries
+        )
+
+        failures = response.get('Failed', [])
+        for failure in failures:
+            logger.warning('change visibility of %s failed with code %s due to %s'.format(
+                failure['Id'],
+                failure['Code'],
+                failure['Message']
+            ))
+
+        if len(failures) > 0:
+            raise exceptions.ChangeMessagesVisibilityException('%d messages failed to '
+                                                               'change visibility in SQS'.format(len(failures)))

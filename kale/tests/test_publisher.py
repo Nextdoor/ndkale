@@ -19,7 +19,6 @@ class PublisherTestCase(unittest.TestCase):
         """Test publisher logic."""
 
         sqs_inst = sqs.SQSTalk()
-        sqs_inst._connection = mock.MagicMock()
 
         with mock.patch(
                 'kale.queue_info.QueueInfo.get_queue') as mock_get_queue:
@@ -36,11 +35,12 @@ class PublisherTestCase(unittest.TestCase):
                 mock_message.create_message.return_value = mock.MagicMock()
                 mock_publisher.publish(mock_task_class, 1, payload)
 
+
+
     def test_publish_with_app_data(self):
         """Test publisher logic."""
 
         sqs_inst = sqs.SQSTalk()
-        sqs_inst._connection = mock.MagicMock()
 
         with mock.patch(
                 'kale.queue_info.QueueInfo.get_queue') as mock_get_queue:
@@ -61,35 +61,32 @@ class PublisherTestCase(unittest.TestCase):
         """Test publisher to DLQ logic."""
 
         sqs_inst = sqs.SQSTalk()
-        sqs_inst._connection = mock.MagicMock()
         mock_publisher = publisher.Publisher(sqs_inst)
         mock_queue = mock.MagicMock()
         mock_publisher._get_or_create_queue = mock.MagicMock(
             return_value=mock_queue)
 
         payload = {'args': [], 'kwargs': {}}
-        sqs_msg = message.KaleMessage.create_message(
+        kale_msg = message.KaleMessage(
             task_class=test_utils.MockTask,
             task_id=test_utils.MockTask._get_task_id(),
             payload=payload,
-            queue='queue',
             current_retry_num=5)
-        sqs_msg.id = 'test-id'
+        kale_msg.id = 'test-id'
         test_body = 'test-body'
-        sqs_msg.get_body_encoded = mock.MagicMock(return_value=test_body)
-        mock_messages = [sqs_msg]
+        kale_msg.encode = mock.MagicMock(return_value=test_body)
+        mock_messages = [kale_msg]
 
-        with mock.patch.object(mock_queue, 'write_batch') as mock_write:
+        with mock.patch.object(mock_queue, 'send_messages') as mock_write:
             mock_publisher.publish_messages_to_dead_letter_queue(
                 'dlq_name', mock_messages)
-            expected_args = [(sqs_msg.id, test_body, 0)]
-            mock_write.assert_called_once_with(expected_args)
+            expected_args = [{'Id': kale_msg.id, 'MessageBody': test_body, 'DelaySeconds': 0}]
+            mock_write.assert_called_once_with(Entries=expected_args)
 
     def test_publish_bad_time_limit_equal(self):
         """Test publish with bad time limit (equal to timeout)."""
 
         sqs_inst = sqs.SQSTalk()
-        sqs_inst._connection = mock.MagicMock()
 
         with mock.patch(
                 'kale.queue_info.QueueInfo.get_queue') as mock_get_queue:
@@ -112,7 +109,6 @@ class PublisherTestCase(unittest.TestCase):
         """Test publish with bad time limit (greater than timeout)."""
 
         sqs_inst = sqs.SQSTalk()
-        sqs_inst._connection = mock.MagicMock()
 
         with mock.patch(
                 'kale.queue_info.QueueInfo.get_queue') as mock_get_queue:
@@ -134,7 +130,6 @@ class PublisherTestCase(unittest.TestCase):
         """Test publish with invalid delay_sec value."""
 
         sqs_inst = sqs.SQSTalk()
-        sqs_inst._connection = mock.MagicMock()
 
         mock_publisher = publisher.Publisher(sqs_inst)
         mock_publisher._get_or_create_queue = mock.MagicMock()
