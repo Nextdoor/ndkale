@@ -8,6 +8,7 @@ from kale import task
 
 import mock
 
+
 def _time_function():
     return 123
 
@@ -88,9 +89,9 @@ class MessageTestCase(unittest.TestCase):
         with mock.patch('kale.message.pickle') as pickle:
             pickle.loads.return_value = message_body
             ciphertext = 'Qx2KhutzbmsCC8NaLkKMXjtMKox/HlpwGz+IM0jzMElyptGsyBQald2EL' \
-                       'qADXqyiJCu0RvD6sDnOKYITIfHz1qSl5qeSZrbslvFJeVXTF4PYaEz69g' \
-                       'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
-                       'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
+                         'qADXqyiJCu0RvD6sDnOKYITIfHz1qSl5qeSZrbslvFJeVXTF4PYaEz69g' \
+                         'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
+                         'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
             kale_msg = message.KaleMessage.decode(ciphertext)
 
         self.assertIsNotNone(kale_msg)
