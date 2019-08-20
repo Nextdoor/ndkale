@@ -44,9 +44,12 @@ class KaleMessage:
         :param task_name: Name of task. Required if task_class is not set.
         :param task_id: Id of task.
         :param payload: Payload holds the data that the task's run_task method will be called with.
-        :param current_retry_num: Current task retry. This will be 0 from new tasks and will be incremented for each retry.
-        :param enqueued_time: Timestamp of when message was queued. If not provided then value set from setting's timestamp function.
-        :param publisher_data: Str containing information about the publisher. If not provided the value from settings used.
+        :param current_retry_num: Current task retry. This will be 0 from new tasks and will be
+        incremented for each retry.
+        :param enqueued_time: Timestamp of when message was queued. If not provided then value set
+        from setting's timestamp function.
+        :param publisher_data: Str containing information about the publisher. If not provided the
+        value from settings used.
         :param instantiate_task: Whether create instance of task_class. Default is false.
 
         """
@@ -115,7 +118,8 @@ class KaleMessage:
         :rtype: str
         """
 
-        compressed_msg = _compressor(pickle.dumps(self._get_message_body(), protocol=settings.PICKLE_PROTOCOL))
+        compressed_msg = _compressor(
+            pickle.dumps(self._get_message_body(), protocol=settings.PICKLE_PROTOCOL))
         compressed_msg = crypt.encrypt(compressed_msg)
         # Check compressed task size.
         if len(compressed_msg) >= _task_size_limit:

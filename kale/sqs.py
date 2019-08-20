@@ -31,9 +31,16 @@ class SQSTalk(object):
             raise exceptions.ImproperlyConfiguredException(
                 'Settings are not properly configured.')
 
-        self.aws_region = settings.AWS_REGION if settings.AWS_REGION != '' else None
-        aws_access_key_id = settings.AWS_ACCESS_KEY_ID if settings.AWS_ACCESS_KEY_ID != '' else None
-        aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY if settings.AWS_SECRET_ACCESS_KEY != '' else None
+        self.aws_region = None
+        if settings.AWS_REGION != '':
+            self.aws_region = settings.AWS_REGION
+
+        aws_access_key_id = None
+        if settings.AWS_ACCESS_KEY_ID != '':
+            aws_access_key_id = settings.AWS_ACCESS_KEY_ID
+
+        if settings.AWS_SECRET_ACCESS_KEY != '':
+            aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY
 
         self._session = boto3.Session(region_name=self.aws_region,
                                       aws_access_key_id=aws_access_key_id,

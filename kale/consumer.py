@@ -78,7 +78,8 @@ class Consumer(sqs.SQSTalk):
             ))
 
         if len(failures) > 0:
-            raise exceptions.DeleteMessagesException('%d messages failed to be deleted from SQS'.format(len(failures)))
+            raise exceptions.DeleteMessagesException('%d messages failed to be deleted '
+                                                     'from SQS'.format(len(failures)))
 
     def release_messages(self, messages, queue_name):
         """Releases messages to SQS queues so other workers can pick them up.
@@ -115,4 +116,5 @@ class Consumer(sqs.SQSTalk):
 
         if len(failures) > 0:
             raise exceptions.ChangeMessagesVisibilityException('%d messages failed to '
-                                                               'change visibility in SQS'.format(len(failures)))
+                                                               'change visibility in '
+                                                               'SQS'.format(len(failures)))

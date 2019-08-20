@@ -35,8 +35,6 @@ class PublisherTestCase(unittest.TestCase):
                 mock_message.create_message.return_value = mock.MagicMock()
                 mock_publisher.publish(mock_task_class, 1, payload)
 
-
-
     def test_publish_with_app_data(self):
         """Test publisher logic."""
 

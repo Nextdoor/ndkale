@@ -112,7 +112,8 @@ class QueueInfoTest(unittest.TestCase):
             self.assertTrue(qinfo.does_queue_need_work(None))
 
     def test_does_queue_need_work_rate_limited(self):
-        rate_limit_exception = ClientError({'Error': {'Code': 'ThrottlingException'}}, 'get_queue_url')
+        rate_limit_exception = ClientError(
+            {'Error': {'Code': 'ThrottlingException'}}, 'get_queue_url')
         with mock.patch.object(
                 queue_info.QueueInfo, 'is_queue_empty', side_effect=rate_limit_exception):
             qinfo = self._build_queue_info()

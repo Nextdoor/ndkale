@@ -96,4 +96,5 @@ class Publisher(sqs.SQSTalk):
             ))
 
         if len(failures) > 0:
-            raise exceptions.SendMessagesException('%d messages failed to be delivered to SQS'.format(len(failures)))
+            raise exceptions.SendMessagesException('%d messages failed to be delivered to '
+                                                   'SQS'.format(len(failures)))

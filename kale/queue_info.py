@@ -13,6 +13,7 @@ import botocore.exceptions
 import six
 import yaml
 
+
 class TaskQueue(object):
     """Represents a task queue. Always created via QueueInfo.
 
