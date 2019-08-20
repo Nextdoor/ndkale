@@ -6,6 +6,7 @@ import unittest
 from kale import message
 from kale import task
 
+import mock
 
 def _time_function():
     return 123
@@ -67,20 +68,30 @@ class MessageTestCase(unittest.TestCase):
             payload=payload,
             current_retry_num=None)
 
-        actual = kale_msg.encode()
-        expected = 'Qx2KhutzbmsCC8NaLkKMXjtMKox/HlpwGz+IM0jzMElyptGsyBQald2EL' \
-                   'qADXqyiJCu0RvD6sDnOKYITIfHz1qSl5qeSZrbslvFJeVXTF4PYaEz69g' \
-                   'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
-                   'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
+        with mock.patch('kale.message.pickle') as pickle:
+            pickle.dumps.return_value = b'\x80'
+            actual = kale_msg.encode()
 
+        expected = 'OKyZrDvbdIV4hnAi07xWGg=='
         self.assertEqual(expected, actual)
 
     def test_decode(self):
-        expected = 'Qx2KhutzbmsCC8NaLkKMXjtMKox/HlpwGz+IM0jzMElyptGsyBQald2EL' \
-                   'qADXqyiJCu0RvD6sDnOKYITIfHz1qSl5qeSZrbslvFJeVXTF4PYaEz69g' \
-                   'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
-                   'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
-        kale_msg = message.KaleMessage.decode(expected)
+        message_body = {
+            'id': 1,
+            'task': 'kale.task.Task',
+            'payload': {'args': [], 'kwargs': {}},
+            '_enqueued_time': 123,
+            'publisher_data': '',
+            'current_retry_num': 0
+        }
+
+        with mock.patch('kale.message.pickle') as pickle:
+            pickle.loads.return_value = message_body
+            ciphertext = 'Qx2KhutzbmsCC8NaLkKMXjtMKox/HlpwGz+IM0jzMElyptGsyBQald2EL' \
+                       'qADXqyiJCu0RvD6sDnOKYITIfHz1qSl5qeSZrbslvFJeVXTF4PYaEz69g' \
+                       'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
+                       'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
+            kale_msg = message.KaleMessage.decode(ciphertext)
 
         self.assertIsNotNone(kale_msg)
         self.assertEqual('kale.task.Task', kale_msg.task_name)
