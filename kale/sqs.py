@@ -39,6 +39,7 @@ class SQSTalk(object):
         if settings.AWS_ACCESS_KEY_ID != '':
             aws_access_key_id = settings.AWS_ACCESS_KEY_ID
 
+        aws_secret_access_key = None
         if settings.AWS_SECRET_ACCESS_KEY != '':
             aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY
 
