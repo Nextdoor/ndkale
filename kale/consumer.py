@@ -56,7 +56,7 @@ class Consumer(sqs.SQSTalk):
         entries = []
         for message in messages:
             entries.append({
-                'Id': message.sqs_message_id,
+                'Id': message.id,
                 'ReceiptHandle': message.sqs_receipt_handle
             })
 
@@ -92,7 +92,7 @@ class Consumer(sqs.SQSTalk):
         entries = []
         for message in messages:
             entries.append({
-                'Id': message.sqs_message_id,
+                'Id': message.id,
                 'ReceiptHandle': message.sqs_receipt_handle,
                 'VisibilityTimeout': 0
             })

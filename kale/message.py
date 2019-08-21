@@ -25,7 +25,10 @@ class KaleMessage:
     # create other mappings.
     _task_mapper = None
 
-    def __init__(self, task_class=None,
+    def __init__(self,
+                 sqs_message_id=None,
+                 sqs_receipt_handle=None,
+                 task_class=None,
                  task_name=None,
                  task_id=None,
                  payload=None,
@@ -54,6 +57,9 @@ class KaleMessage:
 
         KaleMessage._validate_task_payload(payload)
         retry_count = current_retry_num or 0
+
+        self.id = sqs_message_id
+        self.sqs_receipt_handle = sqs_receipt_handle
 
         # This represents the path to the task. The consumer will have a
         # dictionary mapping these values to task classes.
@@ -144,6 +150,8 @@ class KaleMessage:
         message_body = pickle.loads(_decompressor(message_body))
 
         msg = KaleMessage(
+            sqs_message_id=sqs_message.message_id,
+            sqs_receipt_handle=sqs_message.receipt_handle,
             task_id=message_body.get('id'),
             task_name=message_body.get('task'),
             payload=message_body.get('payload'),

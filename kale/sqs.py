@@ -31,9 +31,9 @@ class SQSTalk(object):
             raise exceptions.ImproperlyConfiguredException(
                 'Settings are not properly configured.')
 
-        self.aws_region = None
+        aws_region = None
         if settings.AWS_REGION != '':
-            self.aws_region = settings.AWS_REGION
+            aws_region = settings.AWS_REGION
 
         aws_access_key_id = None
         if settings.AWS_ACCESS_KEY_ID != '':
@@ -43,11 +43,17 @@ class SQSTalk(object):
         if settings.AWS_SECRET_ACCESS_KEY != '':
             aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY
 
-        self._session = boto3.Session(region_name=self.aws_region,
+        endpoint_url = None
+        if settings.MESSAGE_QUEUE_PROXY_HOST and settings.MESSAGE_QUEUE_PROXY_PORT:
+            endpoint_url = "http://{}:{}".format(settings.MESSAGE_QUEUE_PROXY_HOST,
+                                                 settings.MESSAGE_QUEUE_PROXY_PORT)
+
+        self._session = boto3.Session(region_name=aws_region,
                                       aws_access_key_id=aws_access_key_id,
                                       aws_secret_access_key=aws_secret_access_key)
-        self._client = self._session.client('sqs')
-        self._sqs = self._session.resource('sqs')
+
+        self._client = self._session.client('sqs', endpoint_url=endpoint_url)
+        self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url)
 
     def _get_or_create_queue(self, queue_name):
         """Fetch or create a queue.
