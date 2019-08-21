@@ -25,10 +25,6 @@ class KaleMessage:
     # create other mappings.
     _task_mapper = None
 
-    sqs_queue_name = None
-    sqs_message_id = None
-    sqs_receipt_handle = None
-
     def __init__(self, task_class=None,
                  task_name=None,
                  task_id=None,
@@ -36,7 +32,8 @@ class KaleMessage:
                  current_retry_num=None,
                  enqueued_time=None,
                  publisher_data=None,
-                 instantiate_task=False
+                 instantiate_task=False,
+                 delete_func=None
                  ):
         """Constructor.
 
@@ -51,6 +48,7 @@ class KaleMessage:
         :param publisher_data: Str containing information about the publisher. If not provided the
         value from settings used.
         :param instantiate_task: Whether create instance of task_class. Default is false.
+        :param delete_func: Delete function from the SQS message.
 
         """
 
@@ -80,6 +78,8 @@ class KaleMessage:
         # This will instantiate the task.
         if instantiate_task:
             self.task_inst = self._class_from_path(self.task_name)(self._get_message_body())
+
+        self.delete_func = delete_func
 
     @staticmethod
     def _validate_task_payload(payload):
@@ -131,16 +131,16 @@ class KaleMessage:
         return compressed_msg.decode("utf-8")
 
     @classmethod
-    def decode(cls, encoded_message):
+    def decode(cls, sqs_message):
         """Custom decoding for Kale tasks.
 
-        :param str encoded_message: message to decode.
+        :param boto3.resources.factory.sqs.Message sqs_message: message to decode.
 
         :return: dictionary for decoded message.
         :rtype: dict
         """
 
-        message_body = crypt.decrypt(encoded_message)
+        message_body = crypt.decrypt(sqs_message.body)
         message_body = pickle.loads(_decompressor(message_body))
 
         msg = KaleMessage(
@@ -150,7 +150,9 @@ class KaleMessage:
             enqueued_time=message_body.get('_enqueued_time'),
             publisher_data=message_body.get('_publisher'),
             current_retry_num=message_body.get('retry_num'),
-            instantiate_task=True)
+            instantiate_task=True,
+            delete_func=sqs_message.delete
+        )
 
         return msg
 
@@ -164,3 +166,7 @@ class KaleMessage:
             task_class = utils.class_import_from_path(task_path)
             self._task_mapper[task_path] = task_class
         return self._task_mapper[task_path]
+
+    def delete(self):
+        if callable(self.delete_func):
+            self.delete_func()

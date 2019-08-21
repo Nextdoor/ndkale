@@ -37,12 +37,7 @@ class Consumer(sqs.SQSTalk):
 
         kale_messages = []
         for sqs_message in sqs_messages:
-            kale_message = KaleMessage.decode(sqs_message.body)
-            kale_message.sqs_queue_name = queue_name
-            kale_message.sqs_message_id = sqs_message.message_id
-            kale_message.sqs_receipt_handle = sqs_message.receipt_handle
-
-            kale_messages.append(kale_message)
+            kale_messages.append(KaleMessage.decode(sqs_message))
 
         return kale_messages
 

@@ -77,6 +77,8 @@ class MessageTestCase(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_decode(self):
+        mock_sqs_msg = mock.MagicMock()
+
         message_body = {
             'id': 1,
             'task': 'kale.task.Task',
@@ -86,13 +88,15 @@ class MessageTestCase(unittest.TestCase):
             'current_retry_num': 0
         }
 
+        mock_sqs_msg.body = 'Qx2KhutzbmsCC8NaLkKMXjtMKox/HlpwGz+IM0jzMElyptGsyBQald2EL' \
+                            'qADXqyiJCu0RvD6sDnOKYITIfHz1qSl5qeSZrbslvFJeVXTF4PYaEz69g' \
+                            'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
+                            'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
+        mock_sqs_msg.delete = None
+
         with mock.patch('kale.message.pickle') as pickle:
             pickle.loads.return_value = message_body
-            ciphertext = 'Qx2KhutzbmsCC8NaLkKMXjtMKox/HlpwGz+IM0jzMElyptGsyBQald2EL' \
-                         'qADXqyiJCu0RvD6sDnOKYITIfHz1qSl5qeSZrbslvFJeVXTF4PYaEz69g' \
-                         'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
-                         'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
-            kale_msg = message.KaleMessage.decode(ciphertext)
+            kale_msg = message.KaleMessage.decode(mock_sqs_msg)
 
         self.assertIsNotNone(kale_msg)
         self.assertEqual('kale.task.Task', kale_msg.task_name)
@@ -101,3 +105,17 @@ class MessageTestCase(unittest.TestCase):
         self.assertEqual(1, kale_msg.task_id)
         self.assertEqual([], kale_msg.task_args)
         self.assertEqual({}, kale_msg.task_kwargs)
+
+    def test_delete(self):
+        payload = {'args': [], 'kwargs': {}}
+        mock_delete = mock.MagicMock()
+        kale_msg = message.KaleMessage(
+            task_class=task.Task,
+            task_id=1,
+            payload=payload,
+            current_retry_num=None,
+            delete_func=mock_delete
+        )
+
+        kale_msg.delete()
+        mock_delete.assert_called()
