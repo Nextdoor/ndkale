@@ -29,7 +29,7 @@ class Consumer(sqs.SQSTalk):
         sqs_messages = sqs_queue.receive_messages(
             MaxNumberOfMessages=batch_size,
             VisibilityTimeout=visibility_timeout_sec,
-            WaitTimeSeconds=long_poll_time_sec or 1
+            WaitTimeSeconds=long_poll_time_sec or 20
         )
 
         if sqs_messages is None:
