@@ -96,7 +96,7 @@ class MessageTestCase(unittest.TestCase):
 
         with mock.patch('kale.message.pickle') as pickle:
             pickle.loads.return_value = message_body
-            kale_msg = message.KaleMessage.decode(mock_sqs_msg)
+            kale_msg = message.KaleMessage.decode_sqs(mock_sqs_msg)
 
         self.assertIsNotNone(kale_msg)
         self.assertEqual('kale.task.Task', kale_msg.task_name)

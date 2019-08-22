@@ -137,13 +137,13 @@ class KaleMessage:
         return compressed_msg.decode("utf-8")
 
     @classmethod
-    def decode(cls, sqs_message):
-        """Custom decoding for Kale tasks.
+    def decode_sqs(cls, sqs_message):
+        """Custom decoding for Kale tasks from sqs messages
 
         :param boto3.resources.factory.sqs.Message sqs_message: message to decode.
 
-        :return: dictionary for decoded message.
-        :rtype: dict
+        :return: a kale message
+        :rtype: KaleMessage
         """
 
         message_body = crypt.decrypt(sqs_message.body)
@@ -160,6 +160,30 @@ class KaleMessage:
             current_retry_num=message_body.get('retry_num'),
             instantiate_task=True,
             delete_func=sqs_message.delete
+        )
+
+        return msg
+
+    @classmethod
+    def decode_str(cls, message_str):
+        """Custom decoding for Kale tasks from strings
+
+        :param str message_str: message to decode.
+
+        :return: a kale message
+        :rtype: KaleMessage
+        """
+
+        message_body = crypt.decrypt(message_str)
+        message_body = pickle.loads(_decompressor(message_body))
+
+        msg = KaleMessage(
+            task_id=message_body.get('id'),
+            task_name=message_body.get('task'),
+            payload=message_body.get('payload'),
+            enqueued_time=message_body.get('_enqueued_time'),
+            publisher_data=message_body.get('_publisher'),
+            current_retry_num=message_body.get('retry_num')
         )
 
         return msg
