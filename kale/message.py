@@ -28,6 +28,7 @@ class KaleMessage:
     def __init__(self,
                  sqs_message_id=None,
                  sqs_receipt_handle=None,
+                 sqs_queue_name=None,
                  task_class=None,
                  task_name=None,
                  task_id=None,
@@ -59,6 +60,7 @@ class KaleMessage:
         retry_count = current_retry_num or 0
 
         self.id = sqs_message_id
+        self.sqs_queue_name = sqs_queue_name
         self.sqs_receipt_handle = sqs_receipt_handle
 
         # This represents the path to the task. The consumer will have a
@@ -148,8 +150,11 @@ class KaleMessage:
 
         message_body = crypt.decrypt(sqs_message.body)
         message_body = pickle.loads(_decompressor(message_body))
+        # queue_url format is https://queue.amazonaws.com/<account id>/<queue name>
+        sqs_queue_name = sqs_message.queue_url.rsplit('/', 1)[1]
 
         msg = KaleMessage(
+            sqs_queue_name=sqs_queue_name,
             sqs_message_id=sqs_message.message_id,
             sqs_receipt_handle=sqs_message.receipt_handle,
             task_id=message_body.get('id'),

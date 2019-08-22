@@ -93,6 +93,8 @@ class MessageTestCase(unittest.TestCase):
                             'ASICeunTWkCMNla0wnpiJvu4QMEWmubi+RFgFBkTYSnQXG5NtgUCB0ifD' \
                             'PDgoKDtzSIC354LxZjCBmRg1kpjfZ+zNGJ8DMw6YabQ=='
         mock_sqs_msg.delete = None
+        mock_sqs_msg.queue_url = 'https://queue.amazonaws.com/123456789012/' \
+                                 'LowPriorityTest1'
 
         with mock.patch('kale.message.pickle') as pickle:
             pickle.loads.return_value = message_body
@@ -105,6 +107,7 @@ class MessageTestCase(unittest.TestCase):
         self.assertEqual(1, kale_msg.task_id)
         self.assertEqual([], kale_msg.task_args)
         self.assertEqual({}, kale_msg.task_kwargs)
+        self.assertEqual('LowPriorityTest1', kale_msg.sqs_queue_name)
 
     def test_delete(self):
         payload = {'args': [], 'kwargs': {}}
