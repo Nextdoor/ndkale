@@ -74,27 +74,21 @@ class Publisher(sqs.SQSTalk):
         """
         sqs_dead_letter_queue = self._get_or_create_queue(dlq_name)
 
-        entries = []
-        for m in messages:
-            entry = {
+        response = sqs_dead_letter_queue.send_messages(
+            Entries=[{
                 'Id': m.id,
                 'MessageBody': m.encode(),
                 'DelaySeconds': 0
-            }
-            entries.append(entry)
-
-        response = sqs_dead_letter_queue.send_messages(
-            Entries=entries
+            } for m in messages]
         )
 
         failures = response.get('Failed', [])
         for failure in failures:
-            logger.warning('failed to send %s with code %s due to %s'.format(
-                failure['Id'],
-                failure['Code'],
-                failure['Message']
-            ))
+            logger.warning('failed to send %s with code %s due to %s',
+                           failure['Id'],
+                           failure['Code'],
+                           failure['Message']
+                           )
 
         if len(failures) > 0:
-            raise exceptions.SendMessagesException('%d messages failed to be delivered to '
-                                                   'SQS'.format(len(failures)))
+            raise exceptions.SendMessagesException(len(failures))

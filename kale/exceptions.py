@@ -40,15 +40,21 @@ class SendMessagesException(QueueException):
     """Exception raised when a queue returns a non-zero number
     of failures on send.
     """
+    def __init__(self, msg_count):
+        super().__init__("{} messages failed to be delivered to SQS".format(msg_count))
 
 
 class DeleteMessagesException(QueueException):
     """Exception raised when a queue returns a non-zero number
     of failures on delete.
     """
+    def __init__(self, msg_count):
+        super().__init__("{} messages failed to be deleted".format(msg_count))
 
 
 class ChangeMessagesVisibilityException(QueueException):
     """Exception raised when a queue returns a non-zero number
     of failures on change message visibility.
     """
+    def __init__(self, msg_count):
+        super().__init__("{} messages failed to change visibility in SQS".format(msg_count))

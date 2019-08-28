@@ -56,7 +56,7 @@ class KaleMessage:
 
         """
 
-        KaleMessage._validate_task_payload(payload)
+        self._validate_task_payload(payload)
         retry_count = current_retry_num or 0
 
         self.id = sqs_message_id
@@ -66,7 +66,7 @@ class KaleMessage:
         # This represents the path to the task. The consumer will have a
         # dictionary mapping these values to task classes.
         if task_class is not None:
-            self.task_name = '%s.%s' % (task_class.__module__, task_class.__name__)
+            self.task_name = '.'.join([task_class.__module__, task_class.__name__])
         else:
             self.task_name = task_name
 
@@ -131,9 +131,8 @@ class KaleMessage:
         compressed_msg = crypt.encrypt(compressed_msg)
         # Check compressed task size.
         if len(compressed_msg) >= _task_size_limit:
-            task_id = self.task_id
             raise exceptions.ChubbyTaskException(
-                'Task %s is over the limit of %d bytes.' % (task_id,
+                'Task %s is over the limit of %d bytes.' % (self.task_id,
                                                             _task_size_limit))
 
         return compressed_msg.decode("utf-8")
@@ -153,7 +152,7 @@ class KaleMessage:
         # queue_url format is https://queue.amazonaws.com/<account id>/<queue name>
         sqs_queue_name = sqs_message.queue_url.rsplit('/', 1)[1]
 
-        msg = KaleMessage(
+        msg = cls(
             sqs_queue_name=sqs_queue_name,
             sqs_message_id=sqs_message.message_id,
             sqs_receipt_handle=sqs_message.receipt_handle,
@@ -182,7 +181,7 @@ class KaleMessage:
         message_body = crypt.decrypt(message_str)
         message_body = pickle.loads(_decompressor(message_body))
 
-        msg = KaleMessage(
+        msg = cls(
             task_id=message_body.get('id'),
             task_name=message_body.get('task'),
             payload=message_body.get('payload'),
@@ -205,5 +204,5 @@ class KaleMessage:
         return self._task_mapper[task_path]
 
     def delete(self):
-        if callable(self.delete_func):
+        if self.delete_func is not None:
             self.delete_func()

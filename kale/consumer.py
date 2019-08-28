@@ -35,11 +35,7 @@ class Consumer(sqs.SQSTalk):
         if sqs_messages is None:
             return None
 
-        kale_messages = []
-        for sqs_message in sqs_messages:
-            kale_messages.append(KaleMessage.decode_sqs(sqs_message))
-
-        return kale_messages
+        return [KaleMessage.decode_sqs(msg) for msg in sqs_messages]
 
     def delete_messages(self, messages, queue_name):
         """Remove messages from the queue.
@@ -53,28 +49,23 @@ class Consumer(sqs.SQSTalk):
             return
         queue = self._get_or_create_queue(queue_name)
 
-        entries = []
-        for message in messages:
-            entries.append({
+        response = queue.delete_messages(
+            Entries=[{
                 'Id': message.id,
                 'ReceiptHandle': message.sqs_receipt_handle
-            })
-
-        response = queue.delete_messages(
-            Entries=entries
+            } for message in messages]
         )
 
         failures = response.get('Failed', [])
         for failure in failures:
-            logger.warning('delete of %s failed with code %s due to %s'.format(
-                failure['Id'],
-                failure['Code'],
-                failure['Message']
-            ))
+            logger.warning('delete of %s failed with code %s due to %s',
+                           failure['Id'],
+                           failure['Code'],
+                           failure['Message']
+                           )
 
         if len(failures) > 0:
-            raise exceptions.DeleteMessagesException('%d messages failed to be deleted '
-                                                     'from SQS'.format(len(failures)))
+            raise exceptions.DeleteMessagesException(len(failures))
 
     def release_messages(self, messages, queue_name):
         """Releases messages to SQS queues so other workers can pick them up.
@@ -89,27 +80,21 @@ class Consumer(sqs.SQSTalk):
 
         queue = self._get_or_create_queue(queue_name)
 
-        entries = []
-        for message in messages:
-            entries.append({
+        response = queue.change_message_visibility_batch(
+            Entries=[{
                 'Id': message.id,
                 'ReceiptHandle': message.sqs_receipt_handle,
                 'VisibilityTimeout': 0
-            })
-
-        response = queue.change_message_visibility_batch(
-            Entries=entries
+            } for message in messages]
         )
 
         failures = response.get('Failed', [])
         for failure in failures:
-            logger.warning('change visibility of %s failed with code %s due to %s'.format(
-                failure['Id'],
-                failure['Code'],
-                failure['Message']
-            ))
+            logger.warning('change visibility of %s failed with code %s due to %s',
+                           failure['Id'],
+                           failure['Code'],
+                           failure['Message']
+                           )
 
         if len(failures) > 0:
-            raise exceptions.ChangeMessagesVisibilityException('%d messages failed to '
-                                                               'change visibility in '
-                                                               'SQS'.format(len(failures)))
+            raise exceptions.ChangeMessagesVisibilityException(len(failures))
