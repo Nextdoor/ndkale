@@ -7,6 +7,7 @@ import unittest
 from kale import exceptions
 from kale import task
 from kale import test_utils
+
 from six.moves import range
 
 

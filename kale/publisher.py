@@ -47,15 +47,18 @@ class Publisher(sqs.SQSTalk):
                     task_class.time_limit, queue_obj.visibility_timeout_sec,
                     settings.QUEUE_CONFIG))
 
-        queue = self._get_or_create_queue(queue_obj.name)
-        sqs_msg = message.KaleMessage.create_message(
+        sqs_queue = self._get_or_create_queue(queue_obj.name)
+
+        kale_msg = message.KaleMessage(
             task_class=task_class,
             task_id=task_id,
             payload=payload,
-            queue=queue,
             current_retry_num=current_retry_num)
 
-        queue.write(sqs_msg, delay_seconds=delay_sec)
+        sqs_queue.send_message(
+            MessageBody=kale_msg.encode(),
+            DelaySeconds=delay_sec or 1
+        )
 
         logger.debug('Published task. Task id: %s; Task name: %s' % (
             task_id, '%s.%s' % (task_class.__module__, task_class.__name__)))
@@ -66,13 +69,26 @@ class Publisher(sqs.SQSTalk):
         :param str dlq_name: dead-letter-queue name to send these messages to.
         :param list[KaleMessage] messages: a list of KaleMessage instances that
             have permanently failed.
+        :raises: SendMessagesException: SQS responded with a partial success. Some
+        messages were not delivered.
         """
-        dead_letter_queue = self._get_or_create_queue(dlq_name)
+        sqs_dead_letter_queue = self._get_or_create_queue(dlq_name)
 
-        # Message batches are a list of tuples where each tuple contains:
-        #  1) A string that is unique to this list.
-        #  2) The enconded message body.
-        #  3) The task delay (always zero for the dead-letter-queue).
-        message_batch = [(message.id, message.get_body_encoded(),
-                          0) for message in messages]
-        dead_letter_queue.write_batch(message_batch)
+        response = sqs_dead_letter_queue.send_messages(
+            Entries=[{
+                'Id': m.id,
+                'MessageBody': m.encode(),
+                'DelaySeconds': 0
+            } for m in messages]
+        )
+
+        failures = response.get('Failed', [])
+        for failure in failures:
+            logger.warning('failed to send %s with code %s due to %s',
+                           failure['Id'],
+                           failure['Code'],
+                           failure['Message']
+                           )
+
+        if len(failures) > 0:
+            raise exceptions.SendMessagesException(len(failures))

@@ -74,11 +74,12 @@ setup(
     packages=['kale'],
     tests_require=[
         'mock',
-        'nose'
+        'nose',
+        'moto'
     ],
     test_suite='nose.collector',
     install_requires=[
-        'boto',
+        'boto3',
         'pycryptodome',
         'pyyaml',
         'setuptools',

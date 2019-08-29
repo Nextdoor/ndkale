@@ -1,7 +1,13 @@
 """Module containing task consumption functionality."""
 from __future__ import absolute_import
 
+import logging
+
 from kale import sqs
+from kale import exceptions
+from kale.message import KaleMessage
+
+logger = logging.getLogger(__name__)
 
 
 class Consumer(sqs.SQSTalk):
@@ -18,41 +24,77 @@ class Consumer(sqs.SQSTalk):
         :returns: a list of KaleMessage objects, or None if not message found.
         :rtype: list[KaleMessage]
         """
-        queue = self._get_or_create_queue(queue_name)
-        extra_options = {}
-        if long_poll_time_sec:
-            extra_options['wait_time_seconds'] = long_poll_time_sec
-        messages = queue.get_messages(
-            num_messages=batch_size,
-            visibility_timeout=visibility_timeout_sec,
-            **extra_options)
-        if messages:
-            # Call get_body on all of the messages to decrypt and instantiate
-            # each task, this allows us to track each task's dequeue time.
-            [message.get_body() for message in messages]
-            return messages
-        else:
+        sqs_queue = self._get_or_create_queue(queue_name)
+
+        sqs_messages = sqs_queue.receive_messages(
+            MaxNumberOfMessages=batch_size,
+            VisibilityTimeout=visibility_timeout_sec,
+            WaitTimeSeconds=long_poll_time_sec or 20
+        )
+
+        if sqs_messages is None:
             return None
+
+        return [KaleMessage.decode_sqs(msg) for msg in sqs_messages]
 
     def delete_messages(self, messages, queue_name):
         """Remove messages from the queue.
 
         :param list[KaleMessage] messages: messages to delete.
         :param str queue_name: queue name.
+        :raises: DeleteMessagesException: SQS responded with a partial success. Some
+        messages were not deleted.
         """
         if not messages:
             return
         queue = self._get_or_create_queue(queue_name)
-        self._connection.delete_message_batch(queue, messages)
+
+        response = queue.delete_messages(
+            Entries=[{
+                'Id': message.id,
+                'ReceiptHandle': message.sqs_receipt_handle
+            } for message in messages]
+        )
+
+        failures = response.get('Failed', [])
+        for failure in failures:
+            logger.warning('delete of %s failed with code %s due to %s',
+                           failure['Id'],
+                           failure['Code'],
+                           failure['Message']
+                           )
+
+        if len(failures) > 0:
+            raise exceptions.DeleteMessagesException(len(failures))
 
     def release_messages(self, messages, queue_name):
         """Releases messages to SQS queues so other workers can pick them up.
 
         :param list[KaleMessage] messages: messages to release to SQS.
         :param str queue_name: queue name.
+        :raises: ChangeMessagesVisibilityException: SQS responded with a partial success. Some
+        messages were not released.
         """
         if not messages:
             return
+
         queue = self._get_or_create_queue(queue_name)
-        message_tups = [(msg, 0) for msg in messages]
-        self._connection.change_message_visibility_batch(queue, message_tups)
+
+        response = queue.change_message_visibility_batch(
+            Entries=[{
+                'Id': message.id,
+                'ReceiptHandle': message.sqs_receipt_handle,
+                'VisibilityTimeout': 0
+            } for message in messages]
+        )
+
+        failures = response.get('Failed', [])
+        for failure in failures:
+            logger.warning('change visibility of %s failed with code %s due to %s',
+                           failure['Id'],
+                           failure['Code'],
+                           failure['Message']
+                           )
+
+        if len(failures) > 0:
+            raise exceptions.ChangeMessagesVisibilityException(len(failures))

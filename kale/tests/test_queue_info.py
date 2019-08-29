@@ -3,15 +3,26 @@ from __future__ import absolute_import
 
 import tempfile
 import unittest
+
 import mock
-from boto import exception as boto_exception
+from botocore.exceptions import ClientError
 
 from kale import queue_info
+from kale import settings
 from kale import sqs
 
 
 class QueueInfoTest(unittest.TestCase):
     """Tests for QueueInfo class."""
+
+    _previous_region = None
+
+    def setUp(self):
+        self._previous_region = settings.AWS_REGION
+        settings.AWS_REGION = 'us-east-1'
+
+    def tearDown(self):
+        settings.AWS_REGION = self._previous_region
 
     test_string = ('default: \n'
                    '    name: default\n'
@@ -56,27 +67,15 @@ class QueueInfoTest(unittest.TestCase):
         self.assertEquals(queues[2].name, 'lowp')
 
     def _build_queue_info(self):
-        with mock.patch('boto.sqs') as mock_sqs:
-            mock_sqs_connection = mock.MagicMock()
-            mock_queue = mock.MagicMock()
+        sqs_inst = sqs.SQSTalk()
 
-            mock_sqs_connection.lookup.return_value = mock_queue
-            mock_sqs_connection.create_queue.return_value = mock_queue
-
-            conn = mock_sqs.connection
-            conn.SQSConnection.return_value = mock_sqs_connection
-            mock_sqs.connect_to_region.return_value = mock_sqs_connection
-
-            sqs_inst = sqs.SQSTalk()
-            sqs_inst._connection = mock_sqs_connection
-
-            queue_config = tempfile.NamedTemporaryFile(delete=True)
-            queue_config.write(self.test_string.encode('utf8'))
-            queue_config.seek(0)
-            queue_info.QueueInfo._queues = None
-            queue_info.QueueInfo._simple_name_queues_map = None
-            qinfo = queue_info.QueueInfo(queue_config.name, sqs_inst,
-                                         queue_info.TaskQueue)
+        queue_config = tempfile.NamedTemporaryFile(delete=True)
+        queue_config.write(self.test_string.encode('utf8'))
+        queue_config.seek(0)
+        queue_info.QueueInfo._queues = None
+        queue_info.QueueInfo._simple_name_queues_map = None
+        qinfo = queue_info.QueueInfo(queue_config.name, sqs_inst,
+                                     queue_info.TaskQueue)
         return qinfo
 
     def test_queues(self):
@@ -113,8 +112,8 @@ class QueueInfoTest(unittest.TestCase):
             self.assertTrue(qinfo.does_queue_need_work(None))
 
     def test_does_queue_need_work_rate_limited(self):
-        rate_limit_exception = boto_exception.SQSError(None, None)
-        rate_limit_exception.code = 'RequestThrottled'
+        rate_limit_exception = ClientError(
+            {'Error': {'Code': 'ThrottlingException'}}, 'get_queue_url')
         with mock.patch.object(
                 queue_info.QueueInfo, 'is_queue_empty', side_effect=rate_limit_exception):
             qinfo = self._build_queue_info()

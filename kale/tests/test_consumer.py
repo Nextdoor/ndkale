@@ -1,29 +1,32 @@
 """Module testing the kale.consumer module."""
 from __future__ import absolute_import
 
-import mock
 import unittest
+
+from moto import mock_sqs
 
 from kale import consumer
 from kale import settings
+from kale import sqs
 
 
 class ConsumerTestCase(unittest.TestCase):
     """Test consumer logic."""
 
-    def test_fetch_batch(self):
-        """Test fetching a batch of messages"""
-        class MockQueue:
-            def get_messages(self, *args, **kwargs):
-                return []
+    _previous_region = None
 
-        with mock.patch('boto.sqs') as mock_sqs:
-            mock_sqs.connect_to_region.return_value = mock.MagicMock()
-            mock_sqs.connection.SQSConnection.return_value = mock.MagicMock()
-            mock_sqs.connect_to_region.lookup.return_value = MockQueue()
-            mock_sqs.connection.SQSConnection.lookup.return_value = MockQueue()
-            mock_consumer = consumer.Consumer()
-            self.assertIsNotNone(mock_consumer.fetch_batch(
-                settings.QUEUE_CLASS, 0, 60))
-            self.assertIsNotNone(mock_consumer.fetch_batch(
-                settings.QUEUE_CLASS, 0, 60, 10))
+    def setUp(self):
+        self.mock_sqs = mock_sqs()
+        self.mock_sqs.start()
+        sqs.SQSTalk._queues = {}
+
+    def tearDown(self):
+        self.mock_sqs.stop()
+
+    def test_fetch_batch(self):
+        c = consumer.Consumer()
+
+        self.assertIsNotNone(c.fetch_batch(
+            settings.QUEUE_CLASS, 10, 60))
+        self.assertIsNotNone(c.fetch_batch(
+            settings.QUEUE_CLASS, 10, 60, 2))
