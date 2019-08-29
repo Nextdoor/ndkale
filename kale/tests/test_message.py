@@ -28,7 +28,9 @@ class MessageTestCase(unittest.TestCase):
         payload = {'args': [], 'kwargs': {}, 'app_data': {}}
         message.KaleMessage._validate_task_payload(payload)
 
-    def test_message(self):
+    @mock.patch('kale.message._get_current_timestamp')
+    def test_message(self, mock_get_current_timestamp):
+        mock_get_current_timestamp.return_value = 123
         payload = {'args': [], 'kwargs': {}}
 
         # Test create
@@ -58,10 +60,13 @@ class MessageTestCase(unittest.TestCase):
         self.assertIsNotNone(kale_msg)
         self.assertEqual({}, kale_msg.task_app_data)
 
-    def test_encode(self):
+    @mock.patch('kale.message._get_current_timestamp')
+    @mock.patch('kale.message._get_publisher_data')
+    def test_encode(self, mock_get_current_timestamp, mock__get_publisher_data):
         payload = {'args': [], 'kwargs': {}, 'app_data': {}}
-        message._get_current_timestamp = _time_function
-        message._get_publisher_data = _get_publisher_data
+
+        mock_get_current_timestamp.return_value = 123
+        mock__get_publisher_data.return_value = 'test_publisher'
 
         kale_msg = message.KaleMessage(
             task_class=task.Task,
