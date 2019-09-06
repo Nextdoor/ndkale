@@ -34,6 +34,8 @@ LOG_TASK_RESULT_DEFERRED = 'deferred'
 LOG_TASK_RESULT_ERROR = 'error'
 LOG_TASK_RESULT_SUCCESS = 'success'
 
+publisher_inst = None
+
 
 class Worker(object):
 
@@ -54,7 +56,7 @@ class Worker(object):
 
         # The worker will publish permanently failed tasks to a
         # dead-letter-queue.
-        self._publisher = publisher.Publisher()
+        self._publisher = self._get_publisher()
 
         # Track total messages processed.
         self._total_messages_processed = 0
@@ -77,6 +79,13 @@ class Worker(object):
         # Allow the client of this library to do any setup before
         # starting the worker.
         settings.ON_WORKER_STARTUP()
+
+    @staticmethod
+    def _get_publisher():
+        global publisher_inst
+        if publisher_inst is None:
+            publisher_inst = publisher.Publisher()
+        return publisher_inst
 
     def _on_pre_run_worker(self):
         """Callback function right at the beginning of starting the worker. """

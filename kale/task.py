@@ -15,6 +15,8 @@ PERMANENT_FAILURE_UNRECOVERABLE = 'unrecoverable'
 PERMANENT_FAILURE_NO_RETRY = 'no_retries'
 PERMANENT_FAILURE_RETRIES_EXCEEDED = 'max_retries'
 
+publisher_inst = None
+
 
 class Task(object):
     """Base class for kale tasks."""
@@ -76,6 +78,13 @@ class Task(object):
 
         self._dequeued()
 
+    @staticmethod
+    def _get_publisher():
+        global publisher_inst
+        if publisher_inst is None:
+            publisher_inst = publisher.Publisher()
+        return publisher_inst
+
     @classmethod
     def _get_task_id(cls, *args, **kwargs):
         """Return a unique task identifier.
@@ -97,7 +106,7 @@ class Task(object):
             'args': args,
             'kwargs': kwargs,
             'app_data': app_data}
-        pub = publisher.Publisher()
+        pub = cls._get_publisher()
         pub.publish(cls, task_id, payload, delay_sec=delay_sec)
         return task_id
 
@@ -159,7 +168,7 @@ class Task(object):
             'app_data': message.task_app_data}
         retry_count = message.task_retry_num + 1
         delay_sec = cls._get_delay_sec_for_retry(message.task_retry_num)
-        pub = publisher.Publisher()
+        pub = cls._get_publisher()
         pub.publish(
             cls, message.task_id, payload,
             current_retry_num=retry_count, delay_sec=delay_sec)
