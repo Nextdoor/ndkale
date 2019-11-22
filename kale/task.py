@@ -124,13 +124,15 @@ class Task(object):
                    settings.SQS_MAX_TASK_DELAY_SEC)
 
     @classmethod
-    def handle_failure(cls, message, raised_exception):
+    def handle_failure(cls, message, raised_exception, increment_retry_num=True):
         """Logic to respond to task failure.
 
         :param KaleMessage message: instance of KaleMessage containing the
             task that failed.
         :param Exception raised_exception: exception that the failed task
             raised.
+        :param increment_retry_num: boolean whether the failure should increment
+            the retry count.
         :return: True if the task will be retried, False otherwise.
         :rtype: boolean
         """
@@ -166,7 +168,10 @@ class Task(object):
             'args': message.task_args,
             'kwargs': message.task_kwargs,
             'app_data': message.task_app_data}
-        retry_count = message.task_retry_num + 1
+
+        retry_count = message.task_retry_num
+        if increment_retry_num:
+            retry_count = retry_count + 1
         delay_sec = cls._get_delay_sec_for_retry(message.task_retry_num)
         pub = cls._get_publisher()
         pub.publish(
