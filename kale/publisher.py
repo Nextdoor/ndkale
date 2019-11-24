@@ -57,7 +57,7 @@ class Publisher(sqs.SQSTalk):
 
         sqs_queue.send_message(
             MessageBody=kale_msg.encode(),
-            DelaySeconds=delay_sec or 1
+            DelaySeconds=delay_sec or 0
         )
 
         logger.debug('Published task. Task id: %s; Task name: %s' % (
