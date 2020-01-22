@@ -17,7 +17,7 @@ class Publisher(sqs.SQSTalk):
     """Class to manage publishing SQS tasks."""
 
     def publish(self, task_class, task_id, payload,
-                current_retry_num=None, delay_sec=None):
+                current_retry_num=None, delay_sec=None, msg_group_id='default'):
         """Publish the given task type to the queue with the provided payload.
 
         :param obj task_class: class of the task that we are publishing.
@@ -27,6 +27,8 @@ class Publisher(sqs.SQSTalk):
             the first attempt to run the task.
         :param int delay_sec: time (in seconds) that a task should stay
                 in the queue before being released to consumers.
+        :param str msg_group_id: MessageGroupId Parameter for Content-based 
+                Deduplication enabled queues
         :raises: TaskTooChubbyException: This task is outrageously chubby.
                 The publisher of the task should handle this exception and
                 determine how to proceed.
@@ -55,10 +57,15 @@ class Publisher(sqs.SQSTalk):
             payload=payload,
             current_retry_num=current_retry_num)
 
-        sqs_queue.send_message(
-            MessageBody=kale_msg.encode(),
-            DelaySeconds=delay_sec or 1
-        )
+        params = { "MessageBody": kale_msg.encode() }
+
+        if bool(sqs_queue.attributes['ContentBasedDeduplication']):
+            params['MessageGroupId']=msg_group_id
+        
+        if not bool(sqs_queue.attributes['FifoQueue']):
+            params['DelaySeconds']=delay_sec or 1
+
+        sqs_queue.send_message(**params)
 
         logger.debug('Published task. Task id: %s; Task name: %s' % (
             task_id, '%s.%s' % (task_class.__module__, task_class.__name__)))
