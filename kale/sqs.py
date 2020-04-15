@@ -47,6 +47,8 @@ class SQSTalk(object):
         if settings.MESSAGE_QUEUE_PROXY_HOST and settings.MESSAGE_QUEUE_PROXY_PORT:
             endpoint_url = "http://{}:{}".format(settings.MESSAGE_QUEUE_PROXY_HOST,
                                                  settings.MESSAGE_QUEUE_PROXY_PORT)
+        elif settings.VPC_COMPATIBLE_ENDPOINT_URL:
+            endpoint_url = settings.VPC_COMPATIBLE_ENDPOINT_URL
 
         self._session = boto3.Session(region_name=aws_region,
                                       aws_access_key_id=aws_access_key_id,
