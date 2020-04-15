@@ -75,7 +75,7 @@ setup(
     tests_require=[
         'mock',
         'nose',
-        'moto'
+        'moto==1.3.15.dev122'
     ],
     test_suite='nose.collector',
     install_requires=[
