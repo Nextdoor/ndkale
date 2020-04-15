@@ -78,6 +78,7 @@ setup(
         'moto==1.3.15.dev122',
         'MarkupSafe==1.1.1',
         'Jinja2==2.10.3',
+        'zipp==0.6.0',
     ],
     test_suite='nose.collector',
     install_requires=[
