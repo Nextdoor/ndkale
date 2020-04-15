@@ -163,7 +163,7 @@ class TaskFailureTestCase(unittest.TestCase):
                 self.assertTrue(retried)
                 publish_func.assert_called_once_with(
                     test_utils.FailTask, message.task_id, payload,
-                    current_failure_num=(retry + 1), current_retry_num=(retry+1),
+                    current_failure_num=(retry + 1), current_retry_num=(retry + 1),
                     delay_sec=delay_sec)
 
         retry = retry + 1
