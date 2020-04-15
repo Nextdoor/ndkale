@@ -112,7 +112,7 @@ class Task(object):
 
     @classmethod
     def _get_delay_sec_for_retry(cls, current_retry_num):
-        """Generate a delay based on the number of times the task has failed.
+        """Generate a delay based on the number of times the task has retried.
 
         :param int current_retry_num: Task retry count for the task that is
             about to be published.
