@@ -53,9 +53,12 @@ class SQSTalk(object):
         self._session = boto3.Session(region_name=aws_region,
                                       aws_access_key_id=aws_access_key_id,
                                       aws_secret_access_key=aws_secret_access_key)
-
-        self._client = self._session.client('sqs', endpoint_url=endpoint_url)
-        self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url)
+        if settings.VPC_COMPATIBLE_ENDPOINT_URL:
+            self._client = self._session.client('sqs', endpoint_url=endpoint_url, region_name=aws_region)
+            self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url, region_name=aws_region)
+        else:
+            self._client = self._session.client('sqs', endpoint_url=endpoint_url)
+            self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url)
 
     def _get_or_create_queue(self, queue_name):
         """Fetch or create a queue.
