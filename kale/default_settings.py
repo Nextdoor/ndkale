@@ -34,6 +34,10 @@ MESSAGE_QUEUE_USE_PROXY = False
 MESSAGE_QUEUE_PROXY_PORT = 0
 MESSAGE_QUEUE_PROXY_HOST = ''
 
+# Set to the VPC-compatible endpoint url to send SQS traffic through a VPC:
+# https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-sending-messages-from-vpc.html
+VPC_COMPATIBLE_ENDPOINT_URL = ''
+
 # AWS credential for connecting to SQS
 AWS_ACCESS_KEY_ID = ''
 AWS_SECRET_ACCESS_KEY = ''
