@@ -124,14 +124,14 @@ class Task(object):
                    settings.SQS_MAX_TASK_DELAY_SEC)
 
     @classmethod
-    def handle_failure(cls, message, raised_exception, increment_retry_num=True):
+    def handle_failure(cls, message, raised_exception, increment_failure_num=True):
         """Logic to respond to task failure.
 
         :param KaleMessage message: instance of KaleMessage containing the
             task that failed.
         :param Exception raised_exception: exception that the failed task
             raised.
-        :param increment_retry_num: boolean whether the failure should increment
+        :param increment_failure_num: boolean whether the failure should increment
             the retry count.
         :return: True if the task will be retried, False otherwise.
         :rtype: boolean
@@ -158,7 +158,7 @@ class Task(object):
             return False
 
         # Monitor retries and dropped tasks
-        if message.task_retry_num >= cls.max_retries:
+        if message.task_failure_num >= cls.max_retries:
             cls._report_permanent_failure(
                 message, raised_exception,
                 PERMANENT_FAILURE_RETRIES_EXCEEDED, False)
@@ -169,14 +169,14 @@ class Task(object):
             'kwargs': message.task_kwargs,
             'app_data': message.task_app_data}
 
-        retry_count = message.task_retry_num
-        if increment_retry_num:
-            retry_count = retry_count + 1
+        retry_count = message.task_retry_num + 1
+        if increment_failure_num:
+            failure_count = message.task_failure_num + 1
         delay_sec = cls._get_delay_sec_for_retry(message.task_retry_num)
         pub = cls._get_publisher()
         pub.publish(
             cls, message.task_id, payload,
-            current_retry_num=retry_count, delay_sec=delay_sec)
+            current_retry_num=retry_count, current_failure_num=failure_count, delay_sec=delay_sec)
         return True
 
     def run(self, *args, **kwargs):

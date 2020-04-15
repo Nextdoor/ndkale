@@ -61,7 +61,7 @@ class FailTaskNoRetries(FailTask):
 class MockMessage(message.KaleMessage):
 
     def __init__(self, task_inst, task_args=None, task_kwargs=None, app_data=None,
-                 retry_num=0):
+                 retry_num=0, failure_num=0):
         """Instantiate a mock KaleMessage.
 
         Args:
@@ -74,6 +74,7 @@ class MockMessage(message.KaleMessage):
         self.task_kwargs = task_kwargs or {}
         self.task_app_data = app_data or {}
         self.task_retry_num = retry_num
+        self.task_failure_num = failure_num
         self.task_inst = task_inst
 
 

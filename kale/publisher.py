@@ -17,7 +17,7 @@ class Publisher(sqs.SQSTalk):
     """Class to manage publishing SQS tasks."""
 
     def publish(self, task_class, task_id, payload,
-                current_retry_num=None, delay_sec=None):
+                current_retry_num=None, current_failure_num=None, delay_sec=None):
         """Publish the given task type to the queue with the provided payload.
 
         :param obj task_class: class of the task that we are publishing.
@@ -25,6 +25,7 @@ class Publisher(sqs.SQSTalk):
         :param dict payload: dictionary for the task payload.
         :param int current_retry_num: current task retry count. If 0, this is
             the first attempt to run the task.
+        :param int current_failure_num: current task failure count.
         :param int delay_sec: time (in seconds) that a task should stay
                 in the queue before being released to consumers.
         :raises: TaskTooChubbyException: This task is outrageously chubby.
@@ -53,7 +54,8 @@ class Publisher(sqs.SQSTalk):
             task_class=task_class,
             task_id=task_id,
             payload=payload,
-            current_retry_num=current_retry_num)
+            current_retry_num=current_retry_num,
+            current_failure_num=current_failure_num)
 
         sqs_queue.send_message(
             MessageBody=kale_msg.encode(),
