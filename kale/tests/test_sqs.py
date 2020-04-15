@@ -70,7 +70,7 @@ class SQSTestCase(unittest.TestCase):
             mock_settings.VPC_COMPATIBLE_ENDPOINT_URL = "https://sqs.us-east-1.amazonaws.com"
             sqs_inst = sqs.SQS_TALK()
             sqs_inst._get_or_create_queue('LowPriorityTest1')
-            expected_low_queue = sqs_inst._sqs.Queue('https://sqs.us-east-1.amazonaws.com/123456789012/'
-                                                 'LowPriorityTest1')
+            expected_low_queue = sqs_inst._sqs.Queue('https://sqs.us-east-1.amazonaws.com/'
+                                                     '123456789012/LowPriorityTest1')
             self.assertEqual(len(sqs_inst._queues), 1)
             self.assertEqual(expected_low_queue, sqs_inst._queues['LowPriorityTest1'])
