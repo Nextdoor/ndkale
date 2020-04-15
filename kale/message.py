@@ -195,7 +195,7 @@ class KaleMessage:
             enqueued_time=message_body.get('_enqueued_time'),
             publisher_data=message_body.get('_publisher'),
             current_retry_num=message_body.get('retry_num'),
-            current_failure_num = message_body.get('failure_num')
+            current_failure_num=message_body.get('failure_num')
         )
 
         return msg
