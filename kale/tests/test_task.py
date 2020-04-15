@@ -5,6 +5,7 @@ import mock
 import unittest
 
 from kale import exceptions
+from kale import settings
 from kale import task
 from kale import test_utils
 
@@ -244,3 +245,8 @@ class TaskFailureTestCase(unittest.TestCase):
         permanent_failure = not task_inst.__class__.handle_failure(
             mock_message, raised_exc)
         self.assertTrue(permanent_failure)
+
+    def testTaskGetDelaySecForRetry(self):
+        for retry_num in range(1000):
+            self.assertLessEqual(
+                task.Task._get_delay_sec_for_retry(retry_num), settings.MAX_DELAY_SEC_FOR_RETRY)

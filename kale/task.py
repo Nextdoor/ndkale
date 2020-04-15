@@ -121,7 +121,7 @@ class Task(object):
         """
         # Exponentially backoff the wait time for task attempts.
         return min(((1 << current_retry_num) * cls._retry_delay_multiple),
-                   settings.SQS_MAX_TASK_DELAY_SEC)
+                   settings.MAX_DELAY_SEC_FOR_RETRY)
 
     @classmethod
     def handle_failure(cls, message, raised_exception, increment_retry_num=True):
