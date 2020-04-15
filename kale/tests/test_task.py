@@ -116,7 +116,7 @@ class TaskFailureTestCase(unittest.TestCase):
 
         task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
         message = test_utils.MockMessage(
-            task_inst, retry_num=test_utils.FailTask.max_retries)
+            task_inst, failure_num=test_utils.FailTask.max_retries)
 
         with mock.patch(
                 'kale.task.Task._report_permanent_failure') as fail_func:
@@ -131,7 +131,7 @@ class TaskFailureTestCase(unittest.TestCase):
 
         task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
         message = test_utils.MockMessage(
-            task_inst, retry_num=test_utils.FailTask.max_retries)
+            task_inst, failure_num=test_utils.FailTask.max_retries)
 
         with mock.patch(
                 'kale.task.Task._report_permanent_failure') as fail_func:
@@ -156,20 +156,21 @@ class TaskFailureTestCase(unittest.TestCase):
         for retry, delay_sec in sample_values:
             with mock.patch(
                     'kale.publisher.Publisher.publish') as publish_func:
-                message = test_utils.MockMessage(task_inst, retry_num=retry)
+                message = test_utils.MockMessage(task_inst, retry_num=retry, failure_num=retry)
 
                 retried = test_utils.FailTask.handle_failure(
                     message, exceptions.TaskException('Exception'))
                 self.assertTrue(retried)
                 publish_func.assert_called_once_with(
                     test_utils.FailTask, message.task_id, payload,
-                    current_retry_num=(retry + 1), delay_sec=delay_sec)
+                    current_failure_num=(retry + 1), current_retry_num=(retry+1),
+                    delay_sec=delay_sec)
 
         retry = retry + 1
         with mock.patch(
                 'kale.task.Task._report_permanent_failure') as fail_func:
             exc = exceptions.TaskException('Exception')
-            message = test_utils.MockMessage(task_inst, retry_num=retry)
+            message = test_utils.MockMessage(task_inst, retry_num=retry, failure_num=retry)
             retried = test_utils.FailTask.handle_failure(message, exc)
             self.assertFalse(retried)
             fail_func.assert_called_once_with(
