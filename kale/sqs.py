@@ -54,8 +54,12 @@ class SQSTalk(object):
                                       aws_access_key_id=aws_access_key_id,
                                       aws_secret_access_key=aws_secret_access_key)
         if settings.VPC_COMPATIBLE_ENDPOINT_URL:
-            self._client = self._session.client('sqs', endpoint_url=endpoint_url, region_name=aws_region)
-            self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url, region_name=aws_region)
+            self._client = self._session.client('sqs',
+                                                endpoint_url=endpoint_url,
+                                                region_name=aws_region)
+            self._sqs = self._session.resource('sqs',
+                                               endpoint_url=endpoint_url,
+                                               region_name=aws_region)
         else:
             self._client = self._session.client('sqs', endpoint_url=endpoint_url)
             self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url)
