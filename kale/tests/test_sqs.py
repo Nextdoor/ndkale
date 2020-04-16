@@ -67,6 +67,7 @@ class SQSTestCase(unittest.TestCase):
 
     def test_with_vpc_compatible_endpoint(self):
         with mock.patch('kale.sqs.settings') as mock_settings:
+            boto3.setup_default_session()
             mock_settings.VPC_COMPATIBLE_ENDPOINT_URL = "https://sqs.us-east-1.amazonaws.com"
             sqs_inst = sqs.SQSTalk()
             sqs_inst._get_or_create_queue('LowPriorityTest1')
