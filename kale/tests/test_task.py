@@ -116,7 +116,7 @@ class TaskFailureTestCase(unittest.TestCase):
 
         task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
         message = test_utils.MockMessage(
-            task_inst, retry_num=test_utils.FailTask.max_retries)
+            task_inst, failure_num=test_utils.FailTask.max_retries)
 
         with mock.patch(
                 'kale.task.Task._report_permanent_failure') as fail_func:
@@ -131,7 +131,7 @@ class TaskFailureTestCase(unittest.TestCase):
 
         task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
         message = test_utils.MockMessage(
-            task_inst, retry_num=test_utils.FailTask.max_retries)
+            task_inst, failure_num=test_utils.FailTask.max_retries)
 
         with mock.patch(
                 'kale.task.Task._report_permanent_failure') as fail_func:
@@ -141,8 +141,8 @@ class TaskFailureTestCase(unittest.TestCase):
             fail_func.assert_called_once_with(
                 message, exc, task.PERMANENT_FAILURE_RETRIES_EXCEEDED, False)
 
-    def testTaskRuntimeExceeded(self):
-        """Task task failing from timeout."""
+    def testTaskRetryDelayWithoutFailure(self):
+        """Task task failing with delay without failure"""
 
         task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
         sample_values = [
@@ -159,17 +159,48 @@ class TaskFailureTestCase(unittest.TestCase):
                 message = test_utils.MockMessage(task_inst, retry_num=retry)
 
                 retried = test_utils.FailTask.handle_failure(
-                    message, exceptions.TaskException('Exception'))
+                    message, exceptions.TaskException('Exception'), increment_failure_num=False)
                 self.assertTrue(retried)
                 publish_func.assert_called_once_with(
                     test_utils.FailTask, message.task_id, payload,
-                    current_retry_num=(retry + 1), delay_sec=delay_sec)
+                    current_failure_num=0, current_retry_num=(retry + 1),
+                    delay_sec=delay_sec)
 
-        retry = retry + 1
+    def testTaskRetryDelayWithFailure(self):
+        """Task task retrying with delay with failure"""
+
+        task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
+        sample_values = [
+            (i, test_utils.FailTask._get_delay_sec_for_retry(i)) for i in
+            range(task_inst.max_retries)]
+        payload = {
+            'args': [],
+            'kwargs': {},
+            'app_data': {}}
+
+        for failure, delay_sec in sample_values:
+            with mock.patch(
+                    'kale.publisher.Publisher.publish') as publish_func:
+                message = test_utils.MockMessage(task_inst, failure_num=failure, retry_num=failure)
+
+                retried = test_utils.FailTask.handle_failure(
+                    message, exceptions.TaskException('Exception'), increment_failure_num=True)
+                self.assertTrue(retried)
+                publish_func.assert_called_once_with(
+                    test_utils.FailTask, message.task_id, payload,
+                    current_failure_num=(failure + 1), current_retry_num=(failure + 1),
+                    delay_sec=delay_sec)
+
+    def testTaskRuntimeExceeded(self):
+        """Task task failing from timeout."""
+
+        task_inst = test_utils.new_mock_task(task_class=test_utils.FailTask)
+
         with mock.patch(
                 'kale.task.Task._report_permanent_failure') as fail_func:
             exc = exceptions.TaskException('Exception')
-            message = test_utils.MockMessage(task_inst, retry_num=retry)
+            message = test_utils.MockMessage(task_inst, retry_num=0,
+                                             failure_num=task_inst.max_retries + 1)
             retried = test_utils.FailTask.handle_failure(message, exc)
             self.assertFalse(retried)
             fail_func.assert_called_once_with(

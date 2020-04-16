@@ -34,6 +34,7 @@ class KaleMessage:
                  task_id=None,
                  payload=None,
                  current_retry_num=None,
+                 current_failure_num=None,
                  enqueued_time=None,
                  publisher_data=None,
                  instantiate_task=False,
@@ -47,6 +48,8 @@ class KaleMessage:
         :param payload: Payload holds the data that the task's run_task method will be called with.
         :param current_retry_num: Current task retry. This will be 0 from new tasks and will be
         incremented for each retry.
+        :param current_failure_num: Current task failure. This will be 0 from new tasks and will be
+        incremented for each failure.
         :param enqueued_time: Timestamp of when message was queued. If not provided then value set
         from setting's timestamp function.
         :param publisher_data: Str containing information about the publisher. If not provided the
@@ -58,6 +61,7 @@ class KaleMessage:
 
         self._validate_task_payload(payload)
         retry_count = current_retry_num or 0
+        failure_count = current_failure_num or 0
 
         self.id = sqs_message_id
         self.sqs_queue_name = sqs_queue_name
@@ -75,6 +79,7 @@ class KaleMessage:
         self.task_kwargs = payload.get('kwargs')
         self.task_app_data = payload.get('app_data')
         self.task_retry_num = retry_count
+        self.task_failure_num = failure_count
         self._enqueued_time = enqueued_time or _get_current_timestamp()
         self._publisher_data = publisher_data or _get_publisher_data()
 
@@ -116,6 +121,7 @@ class KaleMessage:
             '_enqueued_time': self._enqueued_time,
             '_publisher': self._publisher_data,
             'retry_num': self.task_retry_num,
+            'failure_num': self.task_failure_num,
         }
         return message_body
 
@@ -162,6 +168,7 @@ class KaleMessage:
             enqueued_time=message_body.get('_enqueued_time'),
             publisher_data=message_body.get('_publisher'),
             current_retry_num=message_body.get('retry_num'),
+            current_failure_num=message_body.get('failure_num'),
             instantiate_task=True,
             delete_func=sqs_message.delete
         )
@@ -187,7 +194,8 @@ class KaleMessage:
             payload=message_body.get('payload'),
             enqueued_time=message_body.get('_enqueued_time'),
             publisher_data=message_body.get('_publisher'),
-            current_retry_num=message_body.get('retry_num')
+            current_retry_num=message_body.get('retry_num'),
+            current_failure_num=message_body.get('failure_num')
         )
 
         return msg
