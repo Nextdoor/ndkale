@@ -64,15 +64,3 @@ class SQSTestCase(unittest.TestCase):
             mock_settings.PROPERLY_CONFIGURED = False
             with self.assertRaises(exceptions.ImproperlyConfiguredException):
                 sqs.SQSTalk()
-
-    def test_with_vpc_compatible_endpoint(self):
-        with mock.patch('kale.sqs.settings') as mock_settings:
-            boto3.setup_default_session()
-            mock_settings.MESSAGE_QUEUE_PROXY_PORT = '9324'
-            mock_settings.MESSAGE_QUEUE_PROXY_HOST = 'localhost'
-            sqs_inst = sqs.SQSTalk()
-            sqs_inst._get_or_create_queue('LowPriorityTest1')
-            expected_low_queue = sqs_inst._sqs.Queue('https://sqs.us-east-1.amazonaws.com/'
-                                                     '123456789012/LowPriorityTest1')
-            self.assertEqual(len(sqs_inst._queues), 1)
-            self.assertEqual(expected_low_queue, sqs_inst._queues['LowPriorityTest1'])
