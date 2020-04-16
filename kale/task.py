@@ -170,8 +170,9 @@ class Task(object):
             'app_data': message.task_app_data}
 
         retry_count = message.task_retry_num + 1
+        failure_count = message.task_failure_num
         if increment_failure_num:
-            failure_count = message.task_failure_num + 1
+            failure_count += 1
         delay_sec = cls._get_delay_sec_for_retry(message.task_retry_num)
         pub = cls._get_publisher()
         pub.publish(
