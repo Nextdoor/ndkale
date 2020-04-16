@@ -83,7 +83,7 @@ setup(
     test_suite='nose.collector',
     install_requires=[
         'boto3==1.10.36',
-        'pycryptodome==3.6.1',
+        'pycryptodome==3.6.6',
         'pyyaml==5.2',
         'setuptools==40.8.0',
         'six==1.11.0',
