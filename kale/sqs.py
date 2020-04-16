@@ -43,7 +43,8 @@ class SQSTalk(object):
         if settings.AWS_SECRET_ACCESS_KEY != '':
             aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY
 
-        endpoint_url = None  # If None is passed, Boto3 uses its default behavior to determine the URL
+        # If None is passed, Boto3 uses its default behavior to determine the URL
+        endpoint_url = None
         if settings.MESSAGE_QUEUE_ENDPOINT_URL:
             endpoint_url = settings.MESSAGE_QUEUE_ENDPOINT_URL
 
