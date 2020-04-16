@@ -30,7 +30,7 @@ DECOMPRESSOR = zlib.decompress
 
 # Set to a specific endpoint url to change how the Boto3 client will do the connection.
 # For example, use http://{ELASTICMQ_HOST}:{ELASTICMQ_PORT} to use ElasticMQ in Dev.
-# Or, use the following Amazon docs to pass a VPC-compatible endpoint url to send SQS traffic through a VPC:
+# Or, use these AWS docs to pass a VPC-compatible endpoint url to send SQS traffic through a VPC:
 # https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-sending-messages-from-vpc.html
 MESSAGE_QUEUE_ENDPOINT_URL = ''
 
