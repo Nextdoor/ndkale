@@ -43,12 +43,9 @@ class SQSTalk(object):
         if settings.AWS_SECRET_ACCESS_KEY != '':
             aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY
 
-        endpoint_url = None
-        if settings.MESSAGE_QUEUE_PROXY_HOST and settings.MESSAGE_QUEUE_PROXY_PORT:
-            endpoint_url = "http://{}:{}".format(settings.MESSAGE_QUEUE_PROXY_HOST,
-                                                 settings.MESSAGE_QUEUE_PROXY_PORT)
-        elif settings.VPC_COMPATIBLE_ENDPOINT_URL:
-            endpoint_url = settings.VPC_COMPATIBLE_ENDPOINT_URL
+        endpoint_url = None  # If None is passed, Boto3 uses its default behavior to determine the URL
+        if settings.MESSAGE_QUEUE_ENDPOINT_URL:
+            endpoint_url = settings.MESSAGE_QUEUE_ENDPOINT_URL
 
         self._session = boto3.Session(region_name=aws_region,
                                       aws_access_key_id=aws_access_key_id,
