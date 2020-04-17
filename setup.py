@@ -85,7 +85,7 @@ setup(
         'boto3==1.10.36',
         'pycryptodome==3.6.6',
         'pyyaml==5.2',
-        'setuptools==40.8.0',
+        'setuptools==41.0.1',
         'six==1.11.0',
         'future==0.18.2',
     ],
