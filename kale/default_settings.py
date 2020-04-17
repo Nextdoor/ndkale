@@ -28,11 +28,11 @@ TASK_MAPPER = {}
 COMPRESSOR = zlib.compress
 DECOMPRESSOR = zlib.decompress
 
-# Set to True (in dev) when connecting to ElasticMQ instead of SQS
-MESSAGE_QUEUE_USE_PROXY = False
-# Set to a valid proxy port when connecting to ElasticMQ instead of SQS
-MESSAGE_QUEUE_PROXY_PORT = 0
-MESSAGE_QUEUE_PROXY_HOST = ''
+# Set to a specific endpoint url to change how the Boto3 client will do the connection.
+# For example, use http://{ELASTICMQ_HOST}:{ELASTICMQ_PORT} to use ElasticMQ in Dev.
+# Or, use these AWS docs to pass a VPC-compatible endpoint url to send SQS traffic through a VPC:
+# https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-sending-messages-from-vpc.html
+MESSAGE_QUEUE_ENDPOINT_URL = ''
 
 # AWS credential for connecting to SQS
 AWS_ACCESS_KEY_ID = ''
