@@ -164,21 +164,24 @@ class Task(object):
                 PERMANENT_FAILURE_RETRIES_EXCEEDED, False)
             return False
 
+        failure_count = message.failure_count
+        if increment_failure_num:
+            failure_count = failure_count + 1
+        cls.republish(message, failure_count)
+        return True
+
+    @classmethod
+    def republish(cls, message, failure_count):
         payload = {
             'args': message.task_args,
             'kwargs': message.task_kwargs,
             'app_data': message.task_app_data}
-
         retry_count = message.task_retry_num + 1
-        failure_count = message.task_failure_num
-        if increment_failure_num:
-            failure_count += 1
         delay_sec = cls._get_delay_sec_for_retry(message.task_retry_num)
         pub = cls._get_publisher()
         pub.publish(
             cls, message.task_id, payload,
             current_retry_num=retry_count, current_failure_num=failure_count, delay_sec=delay_sec)
-        return True
 
     def run(self, *args, **kwargs):
         """Wrap the run_task method of tasks.
@@ -195,6 +198,9 @@ class Task(object):
         """
 
         self._setup_task_environment()
+        if not self.should_run_task(*args, **kwargs):
+            self.republish()
+            return
         self._pre_run(*args, **kwargs)
 
         try:
@@ -219,6 +225,9 @@ class Task(object):
     def run_task(self, *args, **kwargs):
         """Run the task, this must be implemented by subclasses."""
         raise NotImplementedError()
+
+    def should_run_task(self, *args, **kwargs):
+        return True
 
     def _check_blacklist(self, *args, **kwargs):
         """Raises an exception if a task should not run.
