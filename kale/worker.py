@@ -363,27 +363,27 @@ class Worker(object):
 
         try:
             with timeout.time_limit(task_inst.time_limit):
-                if self.should_run_task(message):
-                    try:
-                        self.run_task(message)
-                    except Exception as err:
-                        # Re-publish failed tasks.
-                        # As an optimization we could run all of the failures from a
-                        # batch together.
-                        permanent_failure = not task_inst.__class__.handle_failure(
-                            message, err)
-                        if permanent_failure and settings.USE_DEAD_LETTER_QUEUE:
-                            self._permanent_failures.append(message)
-
-                        self._failed_messages.append(message)
-
-                        self._on_task_failed(message, time_remaining_sec, err,
-                                             permanent_failure)
-                    else:
-                        self._successful_messages.append(message)
-                        self._on_task_succeeded(message, time_remaining_sec)
-                else:
+                if not self.should_run_task(message):
                     task_inst.__class__.republish(message, message.task_failure_num)
+                    return
+                try:
+                    self.run_task(message)
+                except Exception as err:
+                    # Re-publish failed tasks.
+                    # As an optimization we could run all of the failures from a
+                    # batch together.
+                    permanent_failure = not task_inst.__class__.handle_failure(
+                        message, err)
+                    if permanent_failure and settings.USE_DEAD_LETTER_QUEUE:
+                        self._permanent_failures.append(message)
+
+                    self._failed_messages.append(message)
+
+                    self._on_task_failed(message, time_remaining_sec, err,
+                                         permanent_failure)
+                else:
+                    self._successful_messages.append(message)
+                    self._on_task_succeeded(message, time_remaining_sec)
         finally:
             self.remove_message_or_exit(message)
         # Increment total messages counter.
