@@ -198,9 +198,6 @@ class Task(object):
         """
 
         self._setup_task_environment()
-        if not self.should_run_task(*args, **kwargs):
-            self.republish()
-            return
         self._pre_run(*args, **kwargs)
 
         try:
