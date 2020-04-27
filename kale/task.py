@@ -164,7 +164,7 @@ class Task(object):
                 PERMANENT_FAILURE_RETRIES_EXCEEDED, False)
             return False
 
-        failure_count = message.failure_count
+        failure_count = message.task_failure_num
         if increment_failure_num:
             failure_count = failure_count + 1
         cls.republish(message, failure_count)
