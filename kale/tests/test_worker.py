@@ -429,6 +429,35 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(0, len(worker_inst._permanent_failures))
         self.assertEqual(num_messages, len(worker_inst._failed_messages))
 
+    def testRunBatchTaskShouldNotRun(self):
+        """Test batch with a task which should not run."""
+        mock_consumer = self._create_patch('kale.consumer.Consumer')
+        get_time = self._create_patch('time.time')
+        mock_republish = self._create_patch(
+            'kale.test_utils.ShouldNotRunTask.republish')
+
+        worker_inst = worker.Worker()
+        worker_inst._batch_queue = worker_inst._queue_selector.get_queue()
+        mock_consumer.assert_called_once_with()
+
+        worker_inst._batch_stop_time = 100
+        # _batch_stop_time - (get_time + task.time_limit) > 0
+        # (100 - (10 + 60)) > 0)
+        get_time.return_value = 10
+
+        message = test_utils.new_mock_message(task_class=test_utils.ShouldNotRunTask)
+        message_batch = [message]
+
+        worker_inst._run_batch(message_batch)
+
+        message_republished, failure_count = mock_republish.call_args[0]
+        self.assertEqual(message, message_republished)
+        self.assertEqual(0, failure_count)
+        self.assertEqual(0, len(worker_inst._incomplete_messages))
+        self.assertEqual(0, len(worker_inst._successful_messages))
+        self.assertEqual(0, len(worker_inst._permanent_failures))
+        self.assertEqual(0, len(worker_inst._failed_messages))
+
     def testRunBatchTaskExceptionPermanentFailure(self):
         """Test batch with a task exception."""
         mock_consumer = self._create_patch('kale.consumer.Consumer')

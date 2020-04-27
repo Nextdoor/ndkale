@@ -29,6 +29,19 @@ class FailTask(task.Task):
         raise exceptions.TaskException('Task failed.')
 
 
+class ShouldNotRunTask(task.Task):
+
+    @classmethod
+    def _get_task_id(cls, *args, **kwargs):
+        return "should_not_run_task"
+
+    def should_run_task(self, *args, **kwargs):
+        return False
+
+    def run_task(self, *args, **kwargs):
+        pass
+
+
 class TimeoutTask(task.Task):
 
     @classmethod
