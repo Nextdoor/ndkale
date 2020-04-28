@@ -362,6 +362,9 @@ class Worker(object):
         task_inst = message.task_inst
         try:
             with timeout.time_limit(task_inst.time_limit):
+                if not self.should_run_task(message):
+                    task_inst.__class__.republish(message, message.task_failure_num)
+                    return
                 self.run_task(message)
         except Exception as err:
             # Re-publish failed tasks.
@@ -390,6 +393,9 @@ class Worker(object):
         except ValueError:
             # Cleanup happened due to the signal handler - make sure we exit immediately.
             sys.exit(0)
+
+    def should_run_task(self, message):
+        return message.task_inst.should_run_task(*message.task_args, **message.task_kwargs)
 
     def run_task(self, message):
         """Run the task contained in the message.
