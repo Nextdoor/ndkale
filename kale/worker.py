@@ -364,6 +364,7 @@ class Worker(object):
             with timeout.time_limit(task_inst.time_limit):
                 if not self.should_run_task(message):
                     task_inst.__class__.republish(message, message.task_failure_num)
+                    self._successful_messages.append(message)
                     return
                 self.run_task(message)
         except Exception as err:
