@@ -7,7 +7,6 @@ python:
 before_install:
 - export BOTO_CONFIG=/dev/null
 install:
-- pip install pycryptodome==3.6.6
 - python setup.py install
 - pip freeze
 before_script:
