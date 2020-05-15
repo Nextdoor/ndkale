@@ -454,7 +454,7 @@ class WorkerTestCase(unittest.TestCase):
         self.assertEqual(message, message_republished)
         self.assertEqual(0, failure_count)
         self.assertEqual(0, len(worker_inst._incomplete_messages))
-        self.assertEqual(0, len(worker_inst._successful_messages))
+        self.assertEqual(len(message_batch), len(worker_inst._successful_messages))
         self.assertEqual(0, len(worker_inst._permanent_failures))
         self.assertEqual(0, len(worker_inst._failed_messages))
 
