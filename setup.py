@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
 
@@ -42,21 +41,24 @@ class CleanHook(clean):
 
 # -*- Classifiers -*-
 
+
 classes = """
     Development Status :: 5 - Production/Stable
     License :: OSI Approved :: BSD License
     Topic :: System :: Distributed Computing
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
-    Programming Language :: Python
-    Programming Language :: Python :: 2.7
+    Programming Language :: Python :: 3
     Programming Language :: Python :: 3.5
     Programming Language :: Python :: 3.6
     Programming Language :: Python :: 3.7
     Programming Language :: Python :: Implementation :: CPython
     Operating System :: OS Independent
 """
+
+
 classifiers = [s.strip() for s in classes.split('\n') if s]
+
 
 # -*- %%% -*-
 
@@ -72,6 +74,7 @@ setup(
     license='Apache License, Version 2',
     keywords='kale nextdoor taskworker sqs python',
     packages=['kale'],
+    python_requires=">=3.5",
     tests_require=[
         'mock==2.0.0',
         'nose==1.3.7',
