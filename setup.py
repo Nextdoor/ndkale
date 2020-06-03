@@ -49,7 +49,6 @@ classes = """
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
     Programming Language :: Python
-    Programming Language :: Python :: 2.7
     Programming Language :: Python :: 3.5
     Programming Language :: Python :: 3.6
     Programming Language :: Python :: 3.7
@@ -73,21 +72,21 @@ setup(
     keywords='kale nextdoor taskworker sqs python',
     packages=['kale'],
     tests_require=[
-        'mock==2.0.0',
-        'nose==1.3.7',
-        'moto==1.3.15.dev122',
-        'MarkupSafe==1.1.1',
-        'Jinja2==2.10.3',
-        'zipp==0.6.0',
+        'mock',
+        'nose',
+        'moto',
+        'MarkupSafe',
+        'Jinja2',
+        'zipp',
     ],
     test_suite='nose.collector',
     install_requires=[
-        'boto3==1.10.36',
-        'pycryptodome==3.6.6',
-        'pyyaml==5.2',
-        'setuptools==41.0.1',
-        'six==1.11.0',
-        'future==0.18.2',
+        'boto3',
+        'pycryptodome',
+        'pyyaml',
+        'setuptools',
+        'six',
+        'future',
     ],
     classifiers=classifiers,
     cmdclass={'clean': CleanHook},
