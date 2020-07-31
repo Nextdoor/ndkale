@@ -1,4 +1,9 @@
 language: python
+env:
+  global:
+    # pypi api token split in 2 because of travisci issue https://travis-ci.community/t/travis-encrypt-data-too-large-for-pypi-tokens-with-older-repos/5792/5
+    secure: "CFbLgwgs4M0yROBMl0vrUF3ELkR85CRQm1s9IzOAroHFxLqBPHsm7ofVzmS+1pYqTTJunJiVUD0655AdnlbyO9x8T0exlcDowlwgTnAMozSlJo72B1mjdqZW26+VIgGcPiZiB3iRBJcOiONOPKo04SzS4EG8jdP+JBc2IwS6VtQ="
+    secure: "j8x37uSIozGhdCEyWXonOIK9MDalFwxfhavUQAnEh4mtgfGshntqs7JkE0gemt+HPAd3jigNQijm/a+8IOjhfuGZPxd/+vhyL7/fT16F3TAOL2o2N+Vz9m9ybxKuO+JFgv4QJOCZ5KGumz2sVfogFiT0Nr4+ow/XU8nhVAAGnSY="
 python:
 - '2.7'
 - '3.5'
@@ -15,9 +20,9 @@ script:
 - python setup.py test
 deploy:
   provider: pypi
-  user: nextdoor
+  user: __token__
   password:
-    secure: n7GczuIQKUzBnRtO6qki3UgWgR4f0J32IrYNqb1WQR3qoBusY1CYunXNvKPTU6AVM5wP98JhQTXaDfFUUWGUGcpQWPZDbrqjszw/plL7kUggjcm2KbD+b9n7cfRzlBlTvrdFq6jO0X6zrm/HYbjr1viJEz65JDsNUfPVfLryJ+U=
+    secure: $TOKEN_1$TOKEN_2
   on:
     tags: true
     all_branches: true
