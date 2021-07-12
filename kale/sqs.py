@@ -55,12 +55,13 @@ class SQSTalk(object):
         self._client = self._session.client('sqs', endpoint_url=endpoint_url)
         self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url)
 
-    def _get_or_create_queue(self, queue_name):
+    def _get_or_create_queue(self, queue_name, is_dlq=False):
         """Fetch or create a queue.
 
         :param str queue_name: string for queue name.
+        :param bool is_dlq:True iff the queue is a dead letter queue and should be tagged as such
         :return: Queue
-        :rtype: boto3.resources.factory.sqs.Queue
+        :rtype: boto3.resources.factory.sqs.Queue    
         """
 
         # Check local cache first.
@@ -76,7 +77,7 @@ class SQSTalk(object):
                 raise e
 
             logger.info('Creating new SQS queue: %s' % queue_name)
-            queue = self._client.create_queue(QueueName=queue_name)
+            queue = self._client.create_queue(QueueName=queue_name, tags={"dlq":str(is_dlq)})
             queue_url = queue.get('QueueUrl')
 
         # create queue object
