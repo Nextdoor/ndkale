@@ -74,7 +74,7 @@ class Publisher(sqs.SQSTalk):
         :raises: SendMessagesException: SQS responded with a partial success. Some
         messages were not delivered.
         """
-        sqs_dead_letter_queue = self._get_or_create_queue(dlq_name)
+        sqs_dead_letter_queue = self._get_or_create_queue(dlq_name, is_dlq=True)
 
         response = sqs_dead_letter_queue.send_messages(
             Entries=[{
