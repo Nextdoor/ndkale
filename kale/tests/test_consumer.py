@@ -26,7 +26,7 @@ class ConsumerTestCase(unittest.TestCase):
     def test_fetch_batch(self):
         c = consumer.Consumer()
 
-        self.assertIsNotNone(c.fetch_batch(
+        self.assertIsNotNone(c.fetch_batch_by_name(
             settings.QUEUE_CLASS, 10, 60))
-        self.assertIsNotNone(c.fetch_batch(
+        self.assertIsNotNone(c.fetch_batch_by_name(
             settings.QUEUE_CLASS, 10, 60, 2))

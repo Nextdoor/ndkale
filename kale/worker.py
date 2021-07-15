@@ -252,7 +252,7 @@ class Worker(object):
             no messages.
         """
         message_batch = self._consumer.fetch_batch(
-            self._batch_queue.name,
+            self._batch_queue,
             self._batch_queue.batch_size,
             self._batch_queue.visibility_timeout_sec,
             long_poll_time_sec=self._batch_queue.long_poll_time_sec)
@@ -302,17 +302,17 @@ class Worker(object):
         if messages_to_be_deleted:
             # Note: This includes failed tasks.
             self._consumer.delete_messages(messages_to_be_deleted,
-                                           self._batch_queue.name)
+                                           self._batch_queue)
 
         if messages_to_be_released:
             # This is only tasks that we didn't get the chance to attempt.
             self._consumer.release_messages(messages_to_be_released,
-                                            self._batch_queue.name)
+                                            self._batch_queue)
 
         # Send permanently failed tasks to the dead-letter-queue.
         if self._permanent_failures and settings.ENABLE_DEAD_LETTER_QUEUE:
             self._publisher.publish_messages_to_dead_letter_queue(
-                self._batch_queue.dlq_name, self._permanent_failures)
+                self._batch_queue, self._permanent_failures)
             self._on_permanent_failure_batch()
 
         # All messages start as incomplete.

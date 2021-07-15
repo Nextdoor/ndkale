@@ -10,6 +10,7 @@ from kale import publisher
 from kale import settings
 from kale import sqs
 from kale import test_utils
+from kale.queue_info import TaskQueue
 
 
 class PublisherTestCase(unittest.TestCase):
@@ -74,10 +75,10 @@ class PublisherTestCase(unittest.TestCase):
         test_body = 'test-body'
         kale_msg.encode = mock.MagicMock(return_value=test_body)
         mock_messages = [kale_msg]
-
+        task_queue = TaskQueue('')
         with mock.patch.object(mock_queue, 'send_messages') as mock_write:
             mock_publisher.publish_messages_to_dead_letter_queue(
-                'dlq_name', mock_messages)
+                task_queue, mock_messages)
             expected_args = [{'Id': kale_msg.id, 'MessageBody': test_body, 'DelaySeconds': 0}]
             mock_write.assert_called_once_with(Entries=expected_args)
 
