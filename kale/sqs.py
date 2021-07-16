@@ -55,6 +55,8 @@ class SQSTalk(object):
         self._client = self._session.client('sqs', endpoint_url=endpoint_url)
         self._sqs = self._session.resource('sqs', endpoint_url=endpoint_url)
 
+        self._sqs_queue_name_to_tag = settings.SQS_QUEUE_TAG_FUNCTION
+
     def _get_or_create_queue(self, queue_name):
         """Fetch or create a queue.
 
@@ -74,13 +76,14 @@ class SQSTalk(object):
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] != 'AWS.SimpleQueueService.NonExistentQueue':
                 raise e
+            tags = self._get_sqs_queue_tags(queue_name)
 
             logger.info('Creating new SQS queue: %s' % queue_name)
-            queue = self._client.create_queue(QueueName=queue_name)
+            queue = self._client.create_queue(QueueName=queue_name, tags=tags)
             queue_url = queue.get('QueueUrl')
 
         # create queue object
-        queue = self._sqs.Queue(queue_url)
+        queue = self._sqs.Queue(queue_ukale/tests/test_settings.pyrl)
 
         self._queues[queue_name] = queue
         return queue
@@ -103,3 +106,17 @@ class SQSTalk(object):
             queues.append(self._sqs.Queue(queue_url))
 
         return queues
+
+    def _get_sqs_queue_tags(self, queue_name):
+        try:
+            tags = self._sqs_queue_name_to_tag(queue_name) or {}
+            if tags:
+                # Tags must be a Dict[str, str]
+                tags = {
+                    str(k): str(v)
+                    for k, v in tags.items()
+                }
+            return tags
+        except Exception as e:
+            logger.warning('Failed to extract SQS Queue tags %s' % queue_name, exc_info=True)
+            return {}
