@@ -31,13 +31,18 @@ class SQSTestCase(unittest.TestCase):
 
         sqs_inst._get_or_create_queue('LowPriorityTest1')
         sqs_inst._get_or_create_queue('HighPriorityTest2')
+        sqs_inst._get_or_create_queue('HighPriorityTest2-dlq')
 
         expected_low_queue = sqs_inst._sqs.Queue('https://queue.amazonaws.com/123456789012/'
                                                  'LowPriorityTest1')
         expected_hi_queue = sqs_inst._sqs.Queue('https://queue.amazonaws.com/123456789012/'
                                                 'HighPriorityTest2')
 
-        self.assertEqual(len(sqs_inst._queues), 2)
+        expected_hi_dlq_queue = sqs_inst._sqs.Queue('https://queue.amazonaws.com/123456789012/'
+                                                'HighPriorityTest2-dlq')
+
+
+        self.assertEqual(len(sqs_inst._queues), 3)
 
         self.assertEqual(expected_low_queue, sqs_inst._queues['LowPriorityTest1'])
         self.assertEqual(expected_hi_queue, sqs_inst._queues['HighPriorityTest2'])

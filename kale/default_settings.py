@@ -42,6 +42,8 @@ AWS_REGION = ''
 # Use max size (in bytes) as of March 2014 as the default.
 SQS_TASK_SIZE_LIMIT = 256000
 
+SQS_QUEUE_TAG_FUNCTION = lambda queue_name: {}
+
 RETRY_DELAY_MULTIPLE_SEC = 60
 SQS_MAX_TASK_DELAY_SEC = 900
 TIMESTAMP_FUNC = time.time
