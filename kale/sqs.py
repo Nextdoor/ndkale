@@ -83,7 +83,7 @@ class SQSTalk(object):
             queue_url = queue.get('QueueUrl')
 
         # create queue object
-        queue = self._sqs.Queue(queue_ukale/tests/test_settings.pyrl)
+        queue = self._sqs.Queue(queue_url)
 
         self._queues[queue_name] = queue
         return queue
