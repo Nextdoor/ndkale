@@ -7,8 +7,6 @@
 You must have docker installed. We need docker to run elasticmq container, 
 where elasticmq is to emulate Amazon SQS on your local machine.
 
-![Run the example](https://s3.amazonaws.com/files.corp.nextdoor.com/github_photos/Taskworker+Example.png)
-
 ### Run ElasticMQ
 
     ./run_elasticmq.sh
