@@ -283,6 +283,12 @@ class Worker(object):
             the count of tasks that were incomplete.
         :rtype: tuple
         """
+        # Send permanently failed tasks to the dead-letter-queue.
+        if self._permanent_failures and settings.ENABLE_DEAD_LETTER_QUEUE:
+            self._publisher.publish_messages_to_dead_letter_queue(
+                self._batch_queue.dlq_name, self._permanent_failures)
+            self._on_permanent_failure_batch()
+
         # Delete from queues (failed messages are re-published as new tasks)
         messages_to_be_deleted = self._successful_messages + \
             self._failed_messages
@@ -293,27 +299,21 @@ class Worker(object):
         # opportunity to run with 4 minutes left (and declines). This will
         # release the task 4 minutes before it previously would have.
 
+        if messages_to_be_deleted:
+            # Note: This includes failed tasks.
+            self._consumer.delete_messages(messages_to_be_deleted,
+                                           self._batch_queue.name)
+
         if (self._batch_stop_time - time.time()) > \
                 settings.RESET_TIMEOUT_THRESHOLD:
             messages_to_be_released = self._incomplete_messages
         else:
             messages_to_be_released = []
 
-        if messages_to_be_deleted:
-            # Note: This includes failed tasks.
-            self._consumer.delete_messages(messages_to_be_deleted,
-                                           self._batch_queue.name)
-
         if messages_to_be_released:
             # This is only tasks that we didn't get the chance to attempt.
             self._consumer.release_messages(messages_to_be_released,
                                             self._batch_queue.name)
-
-        # Send permanently failed tasks to the dead-letter-queue.
-        if self._permanent_failures and settings.ENABLE_DEAD_LETTER_QUEUE:
-            self._publisher.publish_messages_to_dead_letter_queue(
-                self._batch_queue.dlq_name, self._permanent_failures)
-            self._on_permanent_failure_batch()
 
         # All messages start as incomplete.
         self._incomplete_messages = []
