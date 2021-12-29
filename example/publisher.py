@@ -8,7 +8,7 @@ from taskworker import tasks
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('n', type=int, default=10,
+    parser.add_argument('-n', type=int, default=10,
                         help='The input of fibonacci task. Default: 10')
     args = parser.parse_args()
 
