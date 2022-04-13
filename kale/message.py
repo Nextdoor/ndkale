@@ -1,7 +1,7 @@
 """Custom message type for SQS messages."""
 from __future__ import absolute_import
 
-import pickle
+import json
 
 import six
 
@@ -133,7 +133,7 @@ class KaleMessage:
         """
 
         compressed_msg = _compressor(
-            pickle.dumps(self._get_message_body(), protocol=settings.PICKLE_PROTOCOL))
+            json.dumps(self._get_message_body()))
         compressed_msg = crypt.encrypt(compressed_msg)
         # Check compressed task size.
         if len(compressed_msg) >= _task_size_limit:
@@ -154,7 +154,7 @@ class KaleMessage:
         """
 
         message_body = crypt.decrypt(sqs_message.body)
-        message_body = pickle.loads(_decompressor(message_body))
+        message_body = json.loads(message_body)
         # queue_url format is https://queue.amazonaws.com/<account id>/<queue name>
         sqs_queue_name = sqs_message.queue_url.rsplit('/', 1)[1]
 
@@ -185,8 +185,7 @@ class KaleMessage:
         :rtype: KaleMessage
         """
 
-        message_body = crypt.decrypt(message_str)
-        message_body = pickle.loads(_decompressor(message_body))
+        message_body = json.loads(message_str)
 
         msg = cls(
             task_id=message_body.get('id'),
